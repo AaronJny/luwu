@@ -2,9 +2,11 @@
 # @Date         : 2021-01-20
 # @Author       : AaronJny
 # @LastEditTime : 2021-01-21
-# @FilePath     : /LuWu/luwu/core/preprocess/data/data_generator.py
+# @FilePath     : /app/luwu/core/preprocess/data/data_generator.py
 # @Desc         :
 import tensorflow as tf
+import os
+from jinja2 import Template
 from luwu.core.preprocess.image.process import (
     extract_image_and_label_from_record,
     normalized_image,
@@ -29,10 +31,7 @@ class BaseDataGenerator(object):
     @property
     def steps(self):
         if self._steps < 0:
-            cnt = 0
-            for _ in self.dataset:
-                cnt += 1
-            self._steps = cnt
+            raise Exception("请在 `load_dataset` 中统计 steps!")
         else:
             return self._steps
 
@@ -46,7 +45,20 @@ class ImageClassifierDataGnenrator(BaseDataGenerator):
         if self.shuffle:
             dataset = dataset.shuffle(10000)
         dataset = dataset.prefetch(self.batch_size).batch(self.batch_size)
+        # 计算总步数
+        cnt = 0
+        for _ in dataset:
+            cnt += 1
+        self._steps = cnt
+        dataset = dataset.repeat()
         return dataset
 
     def generate_preprocess_code(self):
-        """"""
+        """生成数据处理的代码"""
+        template_path = os.path.join(
+            os.path.dirname(__file__), "templates/ImageClassifierDataGnenrator.txt"
+        )
+        with open(template_path, "r") as f:
+            text = f.read()
+        template = Template(text)
+        return template.render()

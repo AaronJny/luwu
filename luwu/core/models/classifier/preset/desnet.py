@@ -2,7 +2,7 @@
 # @Date         : 2021-01-21
 # @Author       : AaronJny
 # @LastEditTime : 2021-01-21
-# @FilePath     : /LuWu/luwu/core/models/classifier/preset/desnet.py
+# @FilePath     : /app/luwu/core/models/classifier/preset/desnet.py
 # @Desc         :
 import os
 import random
@@ -43,7 +43,7 @@ class LuwuImageClassifier:
             self.target_dataset_path = origin_dataset_path
         # 当未给定模型保存路径时，默认保存到处理后数据集相同路径
         if model_save_path:
-            self.model_save_path = model_save_path + "best_weights.h5"
+            self.model_save_path = os.path.join(model_save_path, "best_weights.h5")
         else:
             self.model_save_path = os.path.join(
                 self.target_dataset_path, "best_weights.h5"
@@ -102,7 +102,7 @@ class LuwuImageClassifier:
     def train(self):
         # callbacks
         checkpoint = tf.keras.callbacks.ModelCheckpoint(
-            self.model_save_path, monitor="val_accuracy", verbose=1, save_best_only=True
+            self.model_save_path, monitor="val_accuracy", save_best_only=True
         )
         # 训练
         self.model.fit(
@@ -115,6 +115,16 @@ class LuwuImageClassifier:
                 checkpoint,
             ],
         )
+
+    def run(self):
+        # 预处理数据集
+        self.preprocess_dataset()
+        # 构建模型
+        self.build_model()
+        # 训练模型
+        self.train()
+        # 导出代码
+        self.generate_code()
 
     def generator_train_code(self):
         """导出模型定义和训练代码"""
@@ -130,7 +140,7 @@ class LuwuPreTrainedImageClassifier(LuwuImageClassifier):
         super(LuwuPreTrainedImageClassifier, self).__init__(*args, **kwargs)
         self.net_name = net_name
 
-    def build_model(self, num_classes=10):
+    def build_model(self):
         pre_trained_net: tf.keras.Model = getattr(
             tf.keras.applications, self.net_name
         )()
@@ -141,9 +151,9 @@ class LuwuPreTrainedImageClassifier(LuwuImageClassifier):
             [
                 pre_trained_net,
                 tf.keras.layers.Flatten(),
-                tf.keras.layers.Dense(1000, activation="relu"),
+                tf.keras.layers.Dense(120, activation="relu"),
                 tf.keras.layers.Dropout(0.3),
-                tf.keras.layers.Dense(num_classes, activation="softmax"),
+                tf.keras.layers.Dense(len(self.classes_num_dict), activation="softmax"),
             ]
         )
         model.compile(
@@ -157,7 +167,7 @@ class LuwuPreTrainedImageClassifier(LuwuImageClassifier):
     def generate_code(self):
         """导出模型定义和模型调用的代码"""
         template_path = os.path.join(
-            __file__, "./templates/LuwuPreTrainedImageClassifier.txt"
+            os.path.dirname(__file__), "templates/LuwuPreTrainedImageClassifier.txt"
         )
         with open(template_path, "r") as f:
             text = f.read()
@@ -166,10 +176,11 @@ class LuwuPreTrainedImageClassifier(LuwuImageClassifier):
             "num_classes": len(self.classes_num_dict),
             "num_classes_map": str(self.classes_num_dict_rev),
             "model_path": self.model_save_path,
+            "data_preprocess_template": self.train_dataset.generate_preprocess_code(),
         }
         template = Template(text)
         code = template.render(**data)
-        code_path = os.path.join(os.path.dirname(self.model_save_path), "code.py")
+        code_path = os.path.join(os.path.dirname(self.model_save_path), "luwu-code.py")
         with open(code_path, "w") as f:
             f.write(code)
 

@@ -2,7 +2,7 @@
 # @Date         : 2021-01-21
 # @Author       : AaronJny
 # @LastEditTime : 2021-01-21
-# @FilePath     : /LuWu/luwu/core/preprocess/data/templates/ImageClassifierDataGnenrator.py
+# @FilePath     : /app/luwu/core/preprocess/data/templates/ImageClassifierDataGnenrator.py
 # @Desc         :
 import tensorflow as tf
 
@@ -20,9 +20,9 @@ def read_image(image_file_path: str):
     # imagenet数据集标准差
     image_std = [0.299, 0.224, 0.225]
     # 缩放图片
-    x = tf.image.resize(image, [224, 224])
+    image = tf.image.resize(image, [224, 224])
     # 将图片的像素值缩放到[0,1]之间
-    x = tf.cast(x, dtype=tf.float32) / 255.0
+    image = tf.cast(image, dtype=tf.float32) / 255.0
     # 归一化
-    x = (x - image_mean) / image_std
+    image = (image - image_mean) / image_std
     return image
