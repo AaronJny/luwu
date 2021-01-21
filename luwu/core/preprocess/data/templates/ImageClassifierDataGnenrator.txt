@@ -7,8 +7,14 @@ def read_image(image_file_path: str):
     """
     image = tf.io.read_file(image_file_path)
     image = tf.io.decode_jpeg(image, channels=3)
-    image_size = 224
-    image = tf.image.resize(image, [image_size, image_size])
-    image = tf.cast(image, dtype=tf.float32) / 255.0
+    # imagenet数据集均值
+    image_mean = [0.485, 0.456, 0.406]
+    # imagenet数据集标准差
+    image_std = [0.299, 0.224, 0.225]
+    # 缩放图片
+    x = tf.image.resize(image, [224, 224])
+    # 将图片的像素值缩放到[0,1]之间
+    x = tf.cast(x, dtype=tf.float32) / 255.0
+    # 归一化
+    x = (x - image_mean) / image_std
     return image
-

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # @Date         : 2021-01-20
 # @Author       : AaronJny
-# @LastEditTime : 2021-01-20
+# @LastEditTime : 2021-01-21
 # @FilePath     : /LuWu/luwu/core/preprocess/data/data_generator.py
 # @Desc         :
 import tensorflow as tf
@@ -41,7 +41,7 @@ class ImageClassifierDataGnenrator(BaseDataGenerator):
     def load_dataset(self):
         dataset = tf.data.TFRecordDataset(self.data_path)
         dataset = dataset.map(extract_image_and_label_from_record)
-        dataset = dataset.map(normalized_image)
+        dataset = dataset.map(normalized_image_with_imagenet)
         # todo:增加图像增广相关功能
         if self.shuffle:
             dataset = dataset.shuffle(10000)
