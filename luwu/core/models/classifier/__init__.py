@@ -2,7 +2,7 @@
 # @Date         : 2020-12-30
 # @Author       : AaronJny
 # @LastEditTime : 2021-01-22
-# @FilePath     : /LuWu/luwu/core/models/classifier/__init__.py
+# @FilePath     : /app/luwu/core/models/classifier/__init__.py
 # @Desc         :
 import os
 import tensorflow as tf
@@ -131,3 +131,52 @@ class LuwuImageClassifier:
     def generate_code(self):
         """导出模型定义和模型调用的代码"""
         raise NotImplementedError
+
+
+from luwu.core.models.classifier.preset import (
+    LuwuDenseNet121ImageClassifier,
+    LuwuDenseNet169ImageClassifier,
+    LuwuDenseNet201ImageClassifier,
+    LuwuVGG16ImageClassifier,
+    LuwuVGG19ImageClassifier,
+    LuwuMobileNetImageClassifier,
+    LuwuMobileNetV2ImageClassifier,
+    LuwuInceptionResNetV2ImageClassifier,
+    LuwuInceptionV3ImageClassifier,
+    LuwuNASNetMobileImageClassifier,
+    LuwuNASNetLargeImageClassifier,
+    LuwuResNet50ImageClassifier,
+    LuwuResNet50V2ImageClassifier,
+    LuwuResNet101ImageClassifier,
+    LuwuResNet101V2ImageClassifier,
+    LuwuResNet152ImageClassifier,
+    LuwuResNet152V2ImageClassifier,
+    LuwuMobileNetV3SmallImageClassifier,
+    LuwuMobileNetV3LargeImageClassifier,
+    LuwuXceptionImageClassifier,
+)
+
+__all__ = [
+    "LuwuImageClassifier",
+    "LuwuPreTrainedImageClassifier",
+    "LuwuDenseNet121ImageClassifier",
+    "LuwuDenseNet169ImageClassifier",
+    "LuwuDenseNet201ImageClassifier",
+    "LuwuVGG16ImageClassifier",
+    "LuwuVGG19ImageClassifier",
+    "LuwuMobileNetImageClassifier",
+    "LuwuMobileNetV2ImageClassifier",
+    "LuwuInceptionResNetV2ImageClassifier",
+    "LuwuInceptionV3ImageClassifier",
+    "LuwuNASNetMobileImageClassifier",
+    "LuwuNASNetLargeImageClassifier",
+    "LuwuResNet50ImageClassifier",
+    "LuwuResNet50V2ImageClassifier",
+    "LuwuResNet101ImageClassifier",
+    "LuwuResNet101V2ImageClassifier",
+    "LuwuResNet152ImageClassifier",
+    "LuwuResNet152V2ImageClassifier",
+    "LuwuMobileNetV3SmallImageClassifier",
+    "LuwuMobileNetV3LargeImageClassifier",
+    "LuwuXceptionImageClassifier",
+]

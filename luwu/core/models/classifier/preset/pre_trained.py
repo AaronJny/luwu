@@ -2,7 +2,7 @@
 # @Date         : 2021-01-21
 # @Author       : AaronJny
 # @LastEditTime : 2021-01-22
-# @FilePath     : /LuWu/luwu/core/models/classifier/preset/pre_trained.py
+# @FilePath     : /app/luwu/core/models/classifier/preset/pre_trained.py
 # @Desc         : 封装tf.keras里设置的预训练模型，并对外提供支持
 import os
 
@@ -114,3 +114,48 @@ class LuwuNASNetMobileImageClassifier(LuwuPreTrainedImageClassifier):
 class LuwuNASNetLargeImageClassifier(LuwuPreTrainedImageClassifier):
     def __init__(self, net_name="NASNetLarge", **kwargs):
         super(LuwuNASNetLargeImageClassifier, self).__init__(net_name, **kwargs)
+
+
+class LuwuResNet50ImageClassifier(LuwuPreTrainedImageClassifier):
+    def __init__(self, net_name="ResNet50", **kwargs):
+        super(LuwuResNet50ImageClassifier, self).__init__(net_name, **kwargs)
+
+
+class LuwuResNet50V2ImageClassifier(LuwuPreTrainedImageClassifier):
+    def __init__(self, net_name="ResNet50V2", **kwargs):
+        super(LuwuResNet50V2ImageClassifier, self).__init__(net_name, **kwargs)
+
+
+class LuwuResNet101ImageClassifier(LuwuPreTrainedImageClassifier):
+    def __init__(self, net_name="ResNet101", **kwargs):
+        super(LuwuResNet101ImageClassifier, self).__init__(net_name, **kwargs)
+
+
+class LuwuResNet101V2ImageClassifier(LuwuPreTrainedImageClassifier):
+    def __init__(self, net_name="ResNet101V2", **kwargs):
+        super(LuwuResNet101V2ImageClassifier, self).__init__(net_name, **kwargs)
+
+
+class LuwuResNet152ImageClassifier(LuwuPreTrainedImageClassifier):
+    def __init__(self, net_name="ResNet152", **kwargs):
+        super(LuwuResNet152ImageClassifier, self).__init__(net_name, **kwargs)
+
+
+class LuwuResNet152V2ImageClassifier(LuwuPreTrainedImageClassifier):
+    def __init__(self, net_name="ResNet152V2", **kwargs):
+        super(LuwuResNet152V2ImageClassifier, self).__init__(net_name, **kwargs)
+
+
+class LuwuMobileNetV3SmallImageClassifier(LuwuPreTrainedImageClassifier):
+    def __init__(self, net_name="MobileNetV3Small", **kwargs):
+        super(LuwuMobileNetV3SmallImageClassifier, self).__init__(net_name, **kwargs)
+
+
+class LuwuMobileNetV3LargeImageClassifier(LuwuPreTrainedImageClassifier):
+    def __init__(self, net_name="MobileNetV3Large", **kwargs):
+        super(LuwuMobileNetV3LargeImageClassifier, self).__init__(net_name, **kwargs)
+
+
+class LuwuXceptionImageClassifier(LuwuPreTrainedImageClassifier):
+    def __init__(self, net_name="Xception", **kwargs):
+        super(LuwuXceptionImageClassifier, self).__init__(net_name, **kwargs)
