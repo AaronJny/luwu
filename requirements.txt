@@ -4,3 +4,6 @@ keras-tuner
 loguru
 tqdm
 jinja2
+flask
+flask-cors
+flask-sqlalchemy

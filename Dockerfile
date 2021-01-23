@@ -1,5 +1,9 @@
 # 基础镜像
 FROM python:3.7-slim
+# 创建文件夹
+RUN mkdir /data
+RUN mkdir /data/configs
+RUN mkdir /data/dataset
 # 工作目录
 WORKDIR /app
 # 复制代码到镜像
