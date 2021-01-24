@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # @Author       : AaronJny
-# @LastEditTime : 2021-01-23
+# @LastEditTime : 2021-01-24
 # @FilePath     : /app/luwu/backend/app.py
 # @Desc         :
 from flask import Flask
@@ -16,6 +16,10 @@ def create_app():
 
     cors.init_app(app)
     db.init_app(app)
+
+    with app.app_context():
+        # 初始化数据库
+        db.create_all()
 
     from luwu.backend.v1 import api_v1_blueprint
 

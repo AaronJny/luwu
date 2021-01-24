@@ -1,12 +1,19 @@
 # -*- coding: utf-8 -*-
 # @Author       : AaronJny
-# @LastEditTime : 2021-01-23
+# @LastEditTime : 2021-01-24
 # @FilePath     : /app/luwu/backend/v1.py
 # @Desc         :
+import json
+import os
+import re
+import time
+
+from flask import request
 from flask.blueprints import Blueprint
 from luwu.backend import status_code_wrapper
-from flask import request
-import os
+from luwu.backend.model import db
+from luwu.backend.model import TrainProject
+from luwu.core.models import image
 
 api_v1_blueprint = Blueprint("api_v1_blueprint", __name__, url_prefix="/api/v1")
 
@@ -42,16 +49,37 @@ def get_engine_list():
     return data
 
 
+@api_v1_blueprint.route("/image/classifier/models/<index>/")
+@status_code_wrapper()
+def get_image_classifier_list(index):
+    index_engine_map = {item["index"]: item["name"] for item in ENGINE_LIST}
+    engine = index_engine_map.get(int(index), "")
+    if not engine:
+        raise Exception("指定模型引擎不存在！")
+    data = []
+    if engine == "预设模型":
+        classifiers = list(image.pre_trained_classifiers)
+        data = []
+        pattern = "Luwu(.*)ImageClassifier"
+        for item in classifiers:
+            cls_name = item.__name__
+            model_name = re.findall(pattern, cls_name)[0]
+            data.append({"index": cls_name, "name": model_name, "tip": ""})
+    return data
+
+
 @api_v1_blueprint.route("/image/classifier/project/create/", methods=["POST"])
 @status_code_wrapper()
 def create_image_classify_project():
-    # 模型引擎
-    engine_index = request.json.get("engine_index")
-    index_engine_map = {item["index"]: item["name"] for item in ENGINE_LIST}
-    engine = index_engine_map.get(engine_index, "")
-    if not engine:
-        raise Exception("指定模型引擎不存在！")
-    # 原始数据及
+    # 模型名称
+    model_name = request.json.get("model_name", "")
+    if not model_name:
+        raise Exception("必须选择一个Model!")
+    try:
+        model = getattr(image, model_name)
+    except:
+        raise Exception("选择的模型不存在！")
+    # 原始数据集
     dataset_index = request.json.get("dataset_index")
     origin_dataset_path = request.json.get("origin_dataset_path", "")
     check_path_correct(origin_dataset_path)
@@ -74,12 +102,26 @@ def create_image_classify_project():
         pass
     else:
         raise Exception("不支持的数据集类型！")
-    print(
-        engine,
-        dataset_index,
-        origin_dataset_path,
-        target_dataset_path,
-        model_save_path,
-        batch_size,
-        epochs,
+    train_project = TrainProject()
+    train_project.params = json.dumps(
+        {
+            "dataset_index": dataset_index,
+            "origin_dataset_path": origin_dataset_path,
+            "target_dataset_path": target_dataset_path,
+            "model_save_path": model_save_path,
+            "batch_size": batch_size,
+            "epochs": epochs,
+        }
     )
+    train_project.model_name = str(model)
+    train_project.status = 0
+    train_project.addtime = int(time.time())
+    train_project.add()
+
+
+@api_v1_blueprint.route("/image/classifier/project/list/")
+@status_code_wrapper()
+def get_train_project_list():
+    projects = db.session.query(TrainProject).all()
+    data = [item.to_dict() for item in projects]
+    return data
