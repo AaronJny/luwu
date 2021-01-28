@@ -1,5 +1,4 @@
 tensorflow
-keras-tuner
 loguru
 tqdm
 jinja2
