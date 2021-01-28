@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # @Date         : 2021-01-21
 # @Author       : AaronJny
-# @LastEditTime : 2021-01-21
+# @LastEditTime : 2021-01-28
 # @FilePath     : /app/luwu/core/preprocess/data/templates/ImageClassifierDataGnenrator.py
 # @Desc         :
 import tensorflow as tf
@@ -11,7 +11,7 @@ def read_image(image_file_path: str):
     """从指定路径读取一张图片，并进行预处理
 
     Args:
-        image_file_path (str): 待处理读片
+        image_file_path (str): 待处理图片
     """
     image = tf.io.read_file(image_file_path)
     image = tf.io.decode_jpeg(image, channels=3)

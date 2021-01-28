@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 # @Author       : AaronJny
-# @LastEditTime : 2021-01-24
+# @LastEditTime : 2021-01-28
 # @FilePath     : /app/luwu/backend/model.py
 # @Desc         :
-from flask_sqlalchemy import SQLAlchemy
 import json
 from datetime import datetime
+
+from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
 
@@ -13,18 +14,40 @@ db = SQLAlchemy()
 class TrainProject(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     params = db.Column(db.Text, nullable=False, default="", comment="参数json")
+    code = db.Column(db.Text, nullable=False, default="", comment="生成的调用代码")
     model_name = db.Column(db.String(100), nullable=False, default="", comment="模型名称")
     status = db.Column(
-        db.Integer, nullable=False, default=0, comment="处理状态 0-未处理，1-处理中，2-处理完成，3-处理失败"
+        db.Integer,
+        nullable=False,
+        default=0,
+        comment="处理状态 0-未处理，1-等待处理，2-处理中，3-处理完成，4-处理失败，5-手动终止，6-异常退出",
     )
+    deleted = db.Column(db.Integer, nullable=False, default=0, comment="是否删除，1-删除")
     addtime = db.Column(db.Integer, nullable=False, default=0, comment="创建时间")
+
+    @property
+    def status_text(self):
+        status_dict = {
+            0: "未处理",
+            1: "等待处理",
+            2: "处理中",
+            3: "处理完成",
+            4: "处理失败",
+            5: "手动终止",
+            6: "异常退出",
+        }
+        return status_dict[self.status]
 
     def to_dict(self):
         data = {
             "id": self.id,
             "params": json.loads(self.params),
+            "params_text": self.params,
+            "code": self.code,
             "model_name": self.model_name,
+            "deleted": self.deleted,
             "status": self.status,
+            "status_text": self.status_text,
             "addtime": datetime.fromtimestamp(self.addtime).strftime(
                 "%Y-%m-%d %H:%M:%S"
             ),

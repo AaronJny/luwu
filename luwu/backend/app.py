@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 # @Author       : AaronJny
-# @LastEditTime : 2021-01-24
+# @LastEditTime : 2021-01-28
 # @FilePath     : /app/luwu/backend/app.py
 # @Desc         :
 from flask import Flask
 from flask_cors import CORS
+
 from luwu.backend.config import Config
 from luwu.backend.model import db
 
@@ -28,6 +29,10 @@ def create_app():
     return app
 
 
-if __name__ == "__main__":
+def run():
     app = create_app()
-    app.run(host="0.0.0.0", port=8888)
+    app.run(host="0.0.0.0", port=Config.PORT)
+
+
+if __name__ == "__main__":
+    run()

@@ -1,9 +1,13 @@
 # -*- coding: utf-8 -*-
 # @Date         : 2021-01-07
 # @Author       : AaronJny
-# @LastEditTime : 2021-01-21
-# @FilePath     : /LuWu/luwu/core/models/classifier/kerastuner/image_classifier.py
+# @LastEditTime : 2021-01-28
+# @FilePath     : /app/luwu/core/models/classifier/kerastuner/image_classifier.py
 # @Desc         :
+"""
+这是还在规划中的功能，里面的代码目前都是无用的。
+TODO:增加KerasTuner相关功能
+"""
 import tensorflow.keras as keras
 from luwu.core.preprocess.image.load import (
     read_classify_dataset_from_dir,

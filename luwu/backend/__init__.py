@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 # @Author       : AaronJny
-# @LastEditTime : 2021-01-22
+# @LastEditTime : 2021-01-28
 # @FilePath     : /app/luwu/backend/__init__.py
 # @Desc         :
 import functools
-from loguru import logger
 import traceback
+
 from flask import jsonify
+from loguru import logger
 
 
 def status_code_wrapper(fix=True):
@@ -20,7 +21,7 @@ def status_code_wrapper(fix=True):
     def decorate(func):
         @functools.wraps(func)
         def wrap(*args, **kwargs):
-            ret = {"code": 0, "msg": "请求成功", "data": {}}
+            ret = {"code": 0, "msg": "请求成功", "data": []}
             try:
                 data = func(*args, **kwargs)
                 if not fix:

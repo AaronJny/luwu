@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # @Date         : 2021-01-21
 # @Author       : AaronJny
-# @LastEditTime : 2021-01-22
+# @LastEditTime : 2021-01-27
 # @FilePath     : /app/luwu/core/models/classifier/preset/pre_trained.py
 # @Desc         : 封装tf.keras里设置的预训练模型，并对外提供支持
 import os
@@ -40,23 +40,34 @@ class LuwuPreTrainedImageClassifier(LuwuImageClassifier):
         self.model = model
         return model
 
-    def generate_code(self):
+    def get_call_code(self):
+        """返回模型定义和模型调用的代码"""
+        if not self._call_code:
+            template_path = os.path.join(
+                os.path.dirname(__file__), "templates/LuwuPreTrainedImageClassifier.txt"
+            )
+            with open(template_path, "r") as f:
+                text = f.read()
+            data = {
+                "net_name": self.net_name,
+                "num_classes": len(self.classes_num_dict),
+                "num_classes_map": str(self.classes_num_dict_rev),
+                "model_path": self.model_save_path,
+                "data_preprocess_template": self.train_dataset.generate_preprocess_code(),
+            }
+            template = Template(text)
+            code = template.render(**data)
+            self._call_code = code
+        return self._call_code
+
+    def save_code(self):
         """导出模型定义和模型调用的代码"""
-        template_path = os.path.join(
-            os.path.dirname(__file__), "templates/LuwuPreTrainedImageClassifier.txt"
-        )
-        with open(template_path, "r") as f:
-            text = f.read()
-        data = {
-            "net_name": self.net_name,
-            "num_classes": len(self.classes_num_dict),
-            "num_classes_map": str(self.classes_num_dict_rev),
-            "model_path": self.model_save_path,
-            "data_preprocess_template": self.train_dataset.generate_preprocess_code(),
-        }
-        template = Template(text)
-        code = template.render(**data)
-        code_path = os.path.join(os.path.dirname(self.model_save_path), "luwu-code.py")
+        code = self.get_call_code()
+        if self.project_id:
+            code_file_name = f"luwu-code-project-{self.project_id}.py"
+        else:
+            code_file_name = "luwu-code.py"
+        code_path = os.path.join(os.path.dirname(self.model_save_path), code_file_name)
         with open(code_path, "w") as f:
             f.write(code)
 

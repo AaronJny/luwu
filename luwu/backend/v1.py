@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # @Author       : AaronJny
-# @LastEditTime : 2021-01-24
+# @LastEditTime : 2021-01-28
 # @FilePath     : /app/luwu/backend/v1.py
 # @Desc         :
 import json
@@ -10,9 +10,9 @@ import time
 
 from flask import request
 from flask.blueprints import Blueprint
+
 from luwu.backend import status_code_wrapper
-from luwu.backend.model import db
-from luwu.backend.model import TrainProject
+from luwu.backend.model import TrainProject, db
 from luwu.core.models import image
 
 api_v1_blueprint = Blueprint("api_v1_blueprint", __name__, url_prefix="/api/v1")
@@ -119,9 +119,72 @@ def create_image_classify_project():
     train_project.add()
 
 
-@api_v1_blueprint.route("/image/classifier/project/list/")
+@api_v1_blueprint.route("/project/list/")
 @status_code_wrapper()
 def get_train_project_list():
     projects = db.session.query(TrainProject).all()
     data = [item.to_dict() for item in projects]
     return data
+
+
+@api_v1_blueprint.route("/project/list/exists/")
+@status_code_wrapper()
+def get_train_project_exists_list():
+    projects = db.session.query(TrainProject).filter(TrainProject.deleted == 0).all()
+    data = [item.to_dict() for item in projects]
+    return data
+
+
+@api_v1_blueprint.route("/project/<xid>/")
+@status_code_wrapper()
+def get_train_project_by_id(xid):
+    tp = db.session.query(TrainProject).get(int(xid))
+    if not tp:
+        raise Exception("指定项目编号不存在！")
+    data = tp.to_dict()
+    return data
+
+
+@api_v1_blueprint.route("/project/<xid>/delete/")
+@status_code_wrapper()
+def delete_train_project_by_id(xid):
+    """物理删除指定训练项目"""
+    db.session.query(TrainProject).filter(TrainProject.id == int(xid)).delete()
+    db.session.commit()
+
+
+@api_v1_blueprint.route("/project/<xid>/status/update/", methods=["POST"])
+@status_code_wrapper()
+def update_train_project_status(xid):
+    tp = db.session.query(TrainProject).get(int(xid))
+    if not tp:
+        raise Exception("指定项目编号不存在！")
+    status = request.json.get("status", None)
+    if status is None:
+        raise Exception("指定状态不正确！")
+    tp.status = status
+    db.session.commit()
+
+
+@api_v1_blueprint.route("/project/<xid>/code/update/", methods=["POST"])
+@status_code_wrapper()
+def update_train_project_code(xid):
+    tp = db.session.query(TrainProject).get(int(xid))
+    if not tp:
+        raise Exception("指定项目编号不存在！")
+    code = request.json.get("code", None)
+    if code is None:
+        raise Exception("指定状态不正确！")
+    tp.code = code
+    db.session.commit()
+
+
+@api_v1_blueprint.route("/project/<xid>/update/", methods=["POST"])
+@status_code_wrapper()
+def update_train_project_attr(xid):
+    tp = db.session.query(TrainProject).get(int(xid))
+    if not tp:
+        raise Exception("指定项目编号不存在！")
+    for attr, value in request.json.items():
+        setattr(tp, attr, value)
+    db.session.commit()

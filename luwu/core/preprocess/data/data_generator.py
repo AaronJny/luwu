@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 # @Date         : 2021-01-20
 # @Author       : AaronJny
-# @LastEditTime : 2021-01-21
+# @LastEditTime : 2021-01-28
 # @FilePath     : /app/luwu/core/preprocess/data/data_generator.py
 # @Desc         :
-import tensorflow as tf
 import os
+
+import tensorflow as tf
 from jinja2 import Template
 from luwu.core.preprocess.image.process import (
     extract_image_and_label_from_record,
