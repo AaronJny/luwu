@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # @Author       : AaronJny
-# @LastEditTime : 2021-01-28
-# @FilePath     : /app/luwu/scripts/utils.py
+# @LastEditTime : 2021-01-29
+# @FilePath     : /LuWu/luwu/scripts/utils.py
 # @Desc         :
 import importlib
 import re
@@ -77,7 +77,7 @@ def delete_project_by_id(xid):
     Args:
         xid (int): 项目编号
     """
-    url = urljoin(HOST, f"/api/v1/project/{xid}/delete/")
+    url = urljoin(HOST, f"/api/v1/project/{xid}/delete/physical/")
     resp = requests.get(url, timeout=30)
     if resp.status_code != 200:
         raise Exception("接口请求失败！")

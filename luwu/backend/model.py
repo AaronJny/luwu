@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # @Author       : AaronJny
-# @LastEditTime : 2021-01-28
-# @FilePath     : /app/luwu/backend/model.py
+# @LastEditTime : 2021-01-29
+# @FilePath     : /LuWu/luwu/backend/model.py
 # @Desc         :
 import json
 from datetime import datetime

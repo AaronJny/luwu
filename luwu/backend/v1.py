@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # @Author       : AaronJny
-# @LastEditTime : 2021-01-28
-# @FilePath     : /app/luwu/backend/v1.py
+# @LastEditTime : 2021-01-29
+# @FilePath     : /LuWu/luwu/backend/v1.py
 # @Desc         :
 import json
 import os
@@ -145,11 +145,23 @@ def get_train_project_by_id(xid):
     return data
 
 
-@api_v1_blueprint.route("/project/<xid>/delete/")
+@api_v1_blueprint.route("/project/<xid>/delete/physical/")
 @status_code_wrapper()
-def delete_train_project_by_id(xid):
+def physical_delete_train_project_by_id(xid):
     """物理删除指定训练项目"""
     db.session.query(TrainProject).filter(TrainProject.id == int(xid)).delete()
+    db.session.commit()
+
+
+@api_v1_blueprint.route("/project/<xid>/delete/logical/")
+@status_code_wrapper()
+def logical_delete_train_project_by_id(xid):
+    """逻辑删除指定训练项目"""
+    tp = db.session.query(TrainProject).get(int(xid))
+    if not tp:
+        raise Exception("指定项目编号不存在！")
+    tp.deleted = 1
+    tp.status = 5
     db.session.commit()
 
 

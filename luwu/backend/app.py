@@ -4,18 +4,10 @@
 # @FilePath     : /LuWu/luwu/backend/app.py
 # @Desc         :
 from flask import Flask
-from flask import render_template
 from flask_cors import CORS
-from werkzeug.routing import BaseConverter
 
 from luwu.backend.config import Config
 from luwu.backend.model import db
-
-
-class RegexConverter(BaseConverter):
-    def __init__(self, map, *args):
-        self.map = map
-        self.regex = args[0]
 
 
 def create_app():
@@ -31,13 +23,6 @@ def create_app():
     with app.app_context():
         # 初始化数据库
         db.create_all()
-
-    app.url_map.converters["regex"] = RegexConverter
-
-    @app.route("/", defaults={"path": ""})
-    @app.route("/home/<path:path>")
-    def catch_all(path):
-        return render_template("index.html")
 
     from luwu.backend.v1 import api_v1_blueprint
 
