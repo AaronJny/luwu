@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Date         : 2020-12-30
 # @Author       : AaronJny
-# @LastEditTime : 2021-01-27
-# @FilePath     : /app/luwu/core/models/classifier/__init__.py
+# @LastEditTime : 2021-01-28
+# @FilePath     : /LuWu/luwu/core/models/classifier/__init__.py
 # @Desc         :
 import os
 import random

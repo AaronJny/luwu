@@ -1,8 +1,14 @@
 # -*- coding: utf-8 -*-
 # @Author       : AaronJny
 # @LastEditTime : 2021-01-28
-# @FilePath     : /app/luwu/scripts/train_project.py
+# @FilePath     : /LuWu/luwu/scripts/train_project.py
 # @Desc         :
+import sys
+import os
+
+sys.path.append(
+    os.path.abspath(os.path.join(os.path.join(os.path.dirname(__file__), ".."), ".."))
+)
 import tensorflow as tf
 
 # 引入顺序不能变动，必须先执行此段代码，才能引入luwu下的模块

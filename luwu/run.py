@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
 # @Author       : AaronJny
 # @LastEditTime : 2021-01-28
-# @FilePath     : /app/luwu/run.py
+# @FilePath     : /LuWu/luwu/run.py
 # @Desc         :
-from luwu.backend.config import Config
-from os.path import dirname
 import time
 import traceback
 from multiprocessing import Process
 import os
+import sys
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import tensorflow as tf
 from loguru import logger
@@ -20,6 +21,7 @@ for gpu in gpus:
 
 from luwu.backend import app
 from luwu.scripts import scheduler
+from luwu.backend.config import Config
 
 
 def init_luwu_dir():
