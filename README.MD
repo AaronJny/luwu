@@ -221,7 +221,7 @@ Give a ⭐️ if this project helped you!
 ## 📝 License
 
 Copyright © 2021 [AaronJny](https://github.com/AaronJny).<br />
-This project is [MIT](https://opensource.org/licenses/mit-license.php) licensed.
+This project is [MIT](https://github.com/AaronJny/luwu/blob/master/LICENSE) licensed.
 
 ***
 _This README was generated with ❤️ by [readme-md-generator](https://github.com/kefranabg/readme-md-generator)_
