@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # @Author       : AaronJny
-# @LastEditTime : 2021-01-29
+# @LastEditTime : 2021-01-30
 # @FilePath     : /LuWu/luwu/backend/model.py
 # @Desc         :
 import json
@@ -13,7 +13,7 @@ db = SQLAlchemy()
 
 class TrainProject(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    params = db.Column(db.Text, nullable=False, default="", comment="参数json")
+    params_text = db.Column(db.Text, nullable=False, default="", comment="参数json")
     code = db.Column(db.Text, nullable=False, default="", comment="生成的调用代码")
     model_name = db.Column(db.String(100), nullable=False, default="", comment="模型名称")
     status = db.Column(
@@ -38,11 +38,19 @@ class TrainProject(db.Model):
         }
         return status_dict[self.status]
 
+    @property
+    def params(self):
+        return json.loads(self.params_text)
+
+    @params.setter
+    def params(self, value):
+        self.params_text = json.dumps(value)
+
     def to_dict(self):
         data = {
             "id": self.id,
-            "params": json.loads(self.params),
-            "params_text": self.params,
+            "params": self.params,
+            "params_text": self.params_text,
             "code": self.code,
             "model_name": self.model_name,
             "deleted": self.deleted,

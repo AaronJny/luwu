@@ -5,15 +5,23 @@
  * @Desc         : 
 -->
 <h1 align="center">Welcome to LuWu 陆吾 👋</h1>
+
+![](./asserts/247e8519e0b04397a74d0c49177bf001.png)
+
+-----------
+
 <p>
+  <img alt="Python Version" src="https://img.shields.io/badge/Python-3.7-blue"></img>
   <img alt="Version" src="https://img.shields.io/badge/version-0.1.2-blue.svg?cacheSeconds=2592000" />
   <a href="https://github.com/AaronJny/luwu" target="_blank">
     <img alt="Documentation" src="https://img.shields.io/badge/documentation-yes-brightgreen.svg" />
   </a>
-  <a href="https://opensource.org/licenses/mit-license.php" target="_blank">
-    <img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg" />
+  <a href="https://github.com/AaronJny/luwu/blob/master/LICENSE" target="_blank">
+    <img alt="License: MIT" src="https://img.shields.io/github/license/AaronJny/luwu" />
   </a>
+  <a><img alt="Stars" src="https://img.shields.io/github/stars/AaronJny/luwu"></a>
 </p>
+
 
 > LuWu——陆吾，一个简单的无代码深度学习平台。
 
@@ -74,6 +82,7 @@
     - [x] 生成简单的调用示例脚本
     - [ ] 生成可用于生产环境部署的项目
   - [ ] 训练进度提示和指标展示
+  - [x] 在线查看训练日志
 
 
 ### 🏠 [Homepage](https://github.com/AaronJny/luwu)
@@ -146,6 +155,8 @@ python luwu/run.py
 - 当训练过程中内存溢出时，请选择更小的Batch Size
 - 当训练完成后，训练效果不够好时，可以选择更大的 Epochs
 
+如果只是想体验一下，可以将Epochs设为1或2，这样可以更快看到结果。
+
 为什么可以选择的参数这么少？
 > 为了简单。
 
@@ -172,10 +183,15 @@ python luwu/run.py
 
 一段时间后，训练完成。
 
+![](asserts/训练3.png)
 
 我们可以在“模型及生成代码的保存路径”中找到训练日志、训练好的模型文件以及调用代码模板。
 
+![](asserts/训练4.png)
+
 你也可以在浏览器中，点击“调用方式”在线浏览调用代码模板。
+
+![](asserts/训练5.png)
 
 使用说明就到这里了，训练好的模型和调用方法都给你了，还要啥自行车？
 

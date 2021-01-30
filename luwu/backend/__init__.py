@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # @Author       : AaronJny
-# @LastEditTime : 2021-01-28
-# @FilePath     : /app/luwu/backend/__init__.py
+# @LastEditTime : 2021-01-30
+# @FilePath     : /LuWu/luwu/backend/__init__.py
 # @Desc         :
 import functools
 import traceback
@@ -32,7 +32,7 @@ def status_code_wrapper(fix=True):
                 logger.error(e)
                 traceback.print_exc()
                 ret["code"] = -1
-                ret["msg"] = traceback.format_exc()
+                ret["msg"] = str(e)
             return jsonify(ret)
 
         return wrap

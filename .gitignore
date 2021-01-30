@@ -155,3 +155,4 @@ images2/
 **/*.pyc
 demo*.py
 do*.py
+luwu/demo.ipynb

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # @Author       : AaronJny
-# @LastEditTime : 2021-01-29
+# @LastEditTime : 2021-01-30
 # @FilePath     : /LuWu/luwu/backend/v1.py
 # @Desc         :
 import json
@@ -103,16 +103,14 @@ def create_image_classify_project():
     else:
         raise Exception("不支持的数据集类型！")
     train_project = TrainProject()
-    train_project.params = json.dumps(
-        {
-            "dataset_index": dataset_index,
-            "origin_dataset_path": origin_dataset_path,
-            "target_dataset_path": target_dataset_path,
-            "model_save_path": model_save_path,
-            "batch_size": batch_size,
-            "epochs": epochs,
-        }
-    )
+    train_project.params = {
+        "dataset_index": dataset_index,
+        "origin_dataset_path": origin_dataset_path,
+        "target_dataset_path": target_dataset_path,
+        "model_save_path": model_save_path,
+        "batch_size": batch_size,
+        "epochs": epochs,
+    }
     train_project.model_name = str(model)
     train_project.status = 0
     train_project.addtime = int(time.time())
@@ -200,3 +198,31 @@ def update_train_project_attr(xid):
     for attr, value in request.json.items():
         setattr(tp, attr, value)
     db.session.commit()
+
+
+@api_v1_blueprint.route("/project/<int:xid>/logs/", defaults={"start_line": 0})
+@api_v1_blueprint.route("/project/<int:xid>/logs/<int:start_line>/")
+@status_code_wrapper()
+def read_project_logs_by_id(xid, start_line):
+    tp = db.session.query(TrainProject).get(int(xid))
+    if not tp:
+        raise Exception("指定项目编号不存在！")
+    model_save_path = tp.params["model_save_path"]
+    log_path = os.path.join(model_save_path, f"project-{xid}.log")
+    if not os.path.exists(log_path):
+        raise Exception("暂无日志！请稍后再试...")
+    lines = []
+    with open(log_path, "r") as f:
+        for index, line in enumerate(f):
+            if index < start_line:
+                continue
+            if line.endswith("\n"):
+                lines.append(line)
+            else:
+                break
+    current_line = start_line + len(lines) - 1
+    text = "<br/>".join(lines)
+    if start_line > 0:
+        text = "<br/>" + text
+    data = {"current_line": current_line, "text": text}
+    return data
