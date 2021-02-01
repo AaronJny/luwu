@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # @Author       : AaronJny
-# @LastEditTime : 2021-01-30
+# @LastEditTime : 2021-02-01
 # @FilePath     : /LuWu/luwu/backend/v1.py
 # @Desc         :
 import json
@@ -18,7 +18,7 @@ from luwu.core.models import image
 api_v1_blueprint = Blueprint("api_v1_blueprint", __name__, url_prefix="/api/v1")
 
 ENGINE_LIST = [
-    {"index": 1, "name": "预设模型", "tip": ""},
+    {"index": 1, "name": "预设模型", "tip": "预先定义好的、结构固定的模型"},
     # {"index": 2, "name": "AutoKeras", "tip": ""},
     # {"index": 3, "name": "KerasTuner", "tip": ""},
     # {"index": 4, "name": "NNI", "tip": ""},
