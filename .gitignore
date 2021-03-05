@@ -156,3 +156,4 @@ images2/
 demo*.py
 do*.py
 luwu/demo.ipynb
+addons/*
