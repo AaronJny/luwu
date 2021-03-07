@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Date         : 2021-01-21
 # @Author       : AaronJny
-# @LastEditTime : 2021-01-22
-# @FilePath     : /app/luwu/core/models/classifier/preset/__init__.py
+# @LastEditTime : 2021-03-06
+# @FilePath     : /LuWu/luwu/core/models/classifier/preset/__init__.py
 # @Desc         :
 from luwu.core.models.classifier.preset.pre_trained import (
     LuwuDenseNet121ImageClassifier,
@@ -25,6 +25,14 @@ from luwu.core.models.classifier.preset.pre_trained import (
     LuwuMobileNetV3SmallImageClassifier,
     LuwuMobileNetV3LargeImageClassifier,
     LuwuXceptionImageClassifier,
+    LuwuEfficientNetB0ImageClassifier,
+    LuwuEfficientNetB1ImageClassifier,
+    LuwuEfficientNetB2ImageClassifier,
+    LuwuEfficientNetB3ImageClassifier,
+    LuwuEfficientNetB4ImageClassifier,
+    LuwuEfficientNetB5ImageClassifier,
+    LuwuEfficientNetB6ImageClassifier,
+    LuwuEfficientNetB7ImageClassifier,
 )
 
 __all__ = [
@@ -49,4 +57,12 @@ __all__ = [
     "LuwuMobileNetV3SmallImageClassifier",
     "LuwuMobileNetV3LargeImageClassifier",
     "LuwuXceptionImageClassifier",
+    "LuwuEfficientNetB0ImageClassifier",
+    "LuwuEfficientNetB1ImageClassifier",
+    "LuwuEfficientNetB2ImageClassifier",
+    "LuwuEfficientNetB3ImageClassifier",
+    "LuwuEfficientNetB4ImageClassifier",
+    "LuwuEfficientNetB5ImageClassifier",
+    "LuwuEfficientNetB6ImageClassifier",
+    "LuwuEfficientNetB7ImageClassifier",
 ]

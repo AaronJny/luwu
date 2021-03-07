@@ -157,3 +157,4 @@ demo*.py
 do*.py
 luwu/demo.ipynb
 addons/*
+~/test_luwu/dataset/label_map.pbtxt

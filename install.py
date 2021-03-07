@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # @Author       : AaronJny
-# @LastEditTime : 2021-03-05
+# @LastEditTime : 2021-03-06
 # @FilePath     : /LuWu/install.py
 # @Desc         : Luwu一键安装脚本
 import argparse
@@ -8,6 +8,7 @@ import os
 import platform
 import subprocess
 import sys
+import json
 
 parser = argparse.ArgumentParser(description="LuWu installation script.")
 parser.add_argument(
@@ -65,6 +66,19 @@ def run_cmd(cmd):
         exit(code)
 
 
+def save_python_env(python_name, pip_name):
+    config_filepath = os.path.expanduser("~/.luwu/config.json")
+    if os.path.exists(config_filepath):
+        with open(config_filepath, "r") as f:
+            config = json.load(f)
+    else:
+        config = {"python_env": {}}
+    config["python_env"]["python_name"] = python_name
+    config["python_env"]["pip_name"] = pip_name
+    with open(config_filepath, "w") as f:
+        json.dump(config, f, ensure_ascii=False, indent=2)
+
+
 def run():
     stage_tip(1, "检查系统类型是否支持...")
     system = platform.system()
@@ -85,6 +99,7 @@ def run():
     pip_name = args.pip_name
     print("Python Name: {}".format(python_name))
     print("Pip Name: {}".format(pip_name))
+    save_python_env(python_name, pip_name)
 
     stage_tip(2, "正在安装 requirements.txt ...")
     cmd = "{} install -r requirements.txt".format(pip_name)
