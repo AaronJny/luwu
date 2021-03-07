@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # @Author       : AaronJny
-# @LastEditTime : 2021-03-06
+# @LastEditTime : 2021-03-08
 # @FilePath     : /LuWu/install.py
 # @Desc         : Luwu一键安装脚本
 import argparse
@@ -75,6 +75,8 @@ def save_python_env(python_name, pip_name):
         config = {"python_env": {}}
     config["python_env"]["python_name"] = python_name
     config["python_env"]["pip_name"] = pip_name
+    dirname = os.path.dirname(config_filepath)
+    os.makedirs(dirname, exist_ok=True)
     with open(config_filepath, "w") as f:
         json.dump(config, f, ensure_ascii=False, indent=2)
 
