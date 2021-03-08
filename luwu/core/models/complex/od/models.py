@@ -268,7 +268,7 @@ class LuWuTFModelsObjectDetector(LuWuObjectDetector):
             os.makedirs(self.project_save_path)
         # 训练checkpoint保存路径
         self.train_checkpoint_path = os.path.join(
-            self.project_save_name, "train_models"
+            self.project_save_path, "train_models"
         )
         os.makedirs(self.train_checkpoint_path, exist_ok=True)
         # 导出模型（SavedModel）保存路径
@@ -299,6 +299,7 @@ class LuWuTFModelsObjectDetector(LuWuObjectDetector):
         params = {}
         label_map_dict = label_map_util.get_label_map_dict(self.label_map_file_path)
         num_classes = len(label_map_dict)
+        # TODO: 优化初始步数生成规则，不再使用默认值
         if self.fine_tune_model_name == "SSD ResNet50 V1 FPN 640x640 (RetinaNet50)":
             params["num_classes"] = num_classes
             params["batch_size"] = self.batch_size
