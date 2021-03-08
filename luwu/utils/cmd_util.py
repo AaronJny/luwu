@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 # @Author       : AaronJny
-# @LastEditTime : 2021-03-07
+# @LastEditTime : 2021-03-08
 # @FilePath     : /LuWu/luwu/utils/cmd_util.py
 # @Desc         :
 import sys
 import os
 import json
 import subprocess
+import shlex
 
 PYTHON_NAME = None
 
@@ -20,19 +21,30 @@ def run_cmd(cmd, raise_exception=True):
     Returns:
         int: shell退出时返回的状态码
     """
-    proc = subprocess.Popen(
-        cmd,
-        stdin=subprocess.PIPE,
-        stderr=sys.stderr,
-        close_fds=True,
-        stdout=sys.stdout,
-        universal_newlines=True,
-        shell=True,
-        bufsize=1,
-    )
-
-    proc.communicate()
-    code = proc.returncode
+    if "JPY_PARENT_PID" in os.environ:
+        # code, output = subprocess.getstatusoutput(cmd)
+        p = subprocess.Popen(
+            shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.STDOUT
+        )
+        while True:
+            output = p.stdout.read1(1024).decode("utf-8")
+            print(output, end="")
+            if p.poll() is not None:
+                break
+        code = p.returncode
+    else:
+        proc = subprocess.Popen(
+            cmd,
+            stdin=subprocess.PIPE,
+            stderr=sys.stderr,
+            close_fds=True,
+            stdout=sys.stdout,
+            universal_newlines=True,
+            shell=True,
+            bufsize=1,
+        )
+        proc.communicate()
+        code = proc.returncode
     if raise_exception and code != 0:
         raise Exception("命令运行过程中出错！")
     return code

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # @Author       : AaronJny
-# @LastEditTime : 2021-03-07
+# @LastEditTime : 2021-03-08
 # @FilePath     : /LuWu/luwu/core/models/complex/od/models.py
 # @Desc         :
 
@@ -192,7 +192,9 @@ class LuWuTFModelsObjectDetector(LuWuObjectDetector):
         if self.need_generate_tfrecord:
             logger.info("遍历数据集，生成 tfrecord ...")
             python_name = cmd_util.get_python_name()
-            script_path = "luwu/core/models/complex/od/utils/generate_tfrecord.py"
+            script_path = os.path.join(
+                os.path.dirname(__file__), "utils", "generate_tfrecord.py"
+            )
             csv_path = os.path.join(self.tfrecord_dataset_dir, "tmp.csv")
             cmd = f"{python_name} {script_path} -x {self.origin_dataset_path} -l {self.label_map_file_path} -o {self.tfrecord_dataset_file_path} -c {csv_path}"
             cmd_util.run_cmd(cmd)
