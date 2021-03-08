@@ -4,11 +4,11 @@
 # @FilePath     : /LuWu/install.py
 # @Desc         : Luwu一键安装脚本
 import argparse
+import json
 import os
 import platform
 import subprocess
 import sys
-import json
 
 parser = argparse.ArgumentParser(description="LuWu installation script.")
 parser.add_argument(
@@ -40,7 +40,7 @@ if args.proxy:
 
 
 def stage_tip(num, msg, logger=None):
-    total = 8
+    total = 7
     message = "Step {}/{}: {}".format(num, total, msg)
     if logger is None:
         print(message)
@@ -104,7 +104,9 @@ def run():
     save_python_env(python_name, pip_name)
 
     stage_tip(2, "正在安装 requirements.txt ...")
-    cmd = "{} install -r requirements.txt".format(pip_name)
+    cmd = "{} install -r requirements.txt -i https://mirrors.aliyun.com/pypi/simple/ ".format(
+        pip_name
+    )
     run_cmd(cmd)
 
     from loguru import logger

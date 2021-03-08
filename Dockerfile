@@ -9,11 +9,11 @@ COPY . /app
 # 安装依赖
 RUN sed -i 's#http://deb.debian.org#https://mirrors.aliyun.com#g' /etc/apt/sources.list
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends git \
+    && apt-get install -y --no-install-recommends git wget unzip build-essential\
     && apt-get purge -y --auto-remove \
     && rm -rf /var/lib/apt/lists/*
 # Python依赖
-RUN pip install -r requirements.txt -i https://mirrors.aliyun.com/pypi/simple/
+RUN python install.py
 # 设置时区
 ENV TZ=Asia/Shanghai
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone

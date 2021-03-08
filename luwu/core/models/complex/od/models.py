@@ -3,14 +3,14 @@
 # @LastEditTime : 2021-03-08
 # @FilePath     : /LuWu/luwu/core/models/complex/od/models.py
 # @Desc         :
+import os
+from glob import glob
 
 import tensorflow as tf
-import os
+from jinja2 import Template
 from loguru import logger
 from luwu.core.models.complex.od.utils import label_map_util
-from luwu.utils import cmd_util
-from jinja2 import Template
-from glob import glob
+from luwu.utils import cmd_util, file_util
 
 
 class LuWuObjectDetector:
@@ -39,9 +39,12 @@ class LuWuObjectDetector:
         """
         self._call_code = ""
         self.project_id = project_id
-        self.origin_dataset_path = os.path.expanduser(origin_dataset_path)
+        origin_dataset_path = file_util.abspath(origin_dataset_path)
+        tfrecord_dataset_path = file_util.abspath(tfrecord_dataset_path)
+        label_map_path = file_util.abspath(label_map_path)
+        model_save_path = file_util.abspath(model_save_path)
+        self.origin_dataset_path = origin_dataset_path
         # 当未给定处理后数据集的路径时，默认保存到原始数据集相同路径
-        tfrecord_dataset_path = os.path.expanduser(tfrecord_dataset_path)
         if tfrecord_dataset_path:
             # 区分给定的是文件夹还是文件。
             # 如果是文件夹，则需要生成tfrecord文件
@@ -63,7 +66,6 @@ class LuWuObjectDetector:
             )
             self.need_generate_tfrecord = True
         # 当未给定pbtxt路径时，也默认保存到tfrecord相同目录下
-        label_map_path = os.path.expanduser(label_map_path)
         if label_map_path:
             if os.path.isfile(label_map_path):
                 self.label_map_file_path = label_map_path
@@ -86,7 +88,6 @@ class LuWuObjectDetector:
             self.project_save_name = f"luwu-object-detection-project-{self.project_id}"
         else:
             self.project_save_name = f"luwu-object-detection-project"
-        model_save_path = os.path.expanduser(model_save_path)
         if model_save_path:
             self.project_save_path = os.path.join(
                 model_save_path, self.project_save_name
@@ -106,8 +107,8 @@ class LuWuObjectDetector:
         """训练模型"""
         raise NotImplementedError
 
-    def generate_project(self):
-        """生成示例项目"""
+    def export_model(self):
+        """导出训练好的模型"""
         raise NotImplementedError
 
     def run(self):
@@ -167,7 +168,8 @@ class LuWuTFModelsObjectDetector(LuWuObjectDetector):
             project_id=project_id,
             **kwargs,
         )
-        self.fine_tune_checkpoint_path = os.path.expanduser(fine_tune_checkpoint_path)
+        fine_tune_checkpoint_path = file_util.abspath(fine_tune_checkpoint_path)
+        self.fine_tune_checkpoint_path = fine_tune_checkpoint_path
         self.fine_tune_model_name = fine_tune_model_name
         if self.fine_tune_model_name not in self.fine_tune_models_config_map:
             raise Exception(

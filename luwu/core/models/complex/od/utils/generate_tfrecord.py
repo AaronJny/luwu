@@ -1,20 +1,22 @@
 # -*- coding: utf-8 -*-
 # @Author       : AaronJny
-# @LastEditTime : 2021-03-06
+# @LastEditTime : 2021-03-08
 # @FilePath     : /LuWu/luwu/core/models/complex/od/utils/generate_tfrecord.py
 # @Desc         : 文件修改自 [https://tensorflow-object-detection-api-tutorial.readthedocs.io/en/latest/training.html](https://tensorflow-object-detection-api-tutorial.readthedocs.io/en/latest/training.html)
-import os
-import glob
-import pandas as pd
-import io
-import xml.etree.ElementTree as ET
 import argparse
+import glob
+import io
+import os
+import xml.etree.ElementTree as ET
+
+import pandas as pd
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"  # Suppress TensorFlow logging (1)
-import tensorflow.compat.v1 as tf
-from PIL import Image
-from object_detection.utils import dataset_util, label_map_util
 from collections import namedtuple
+
+import tensorflow.compat.v1 as tf
+from object_detection.utils import dataset_util, label_map_util
+from PIL import Image
 
 # Initiate argument parser
 parser = argparse.ArgumentParser(
