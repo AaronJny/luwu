@@ -143,6 +143,13 @@ class LuWuTFModelsObjectDetector(LuWuObjectDetector):
             "outputs": "Boxes",
             "template": "CenterNet_Resnet101_V1_FPN_512x512.jinja",
         },
+        "CenterNet HourGlass104 512x512": {
+            "url": "http://download.tensorflow.org/models/object_detection/tf2/20200713/centernet_hg104_512x512_coco17_tpu-8.tar.gz",
+            "speed": "70",
+            "coco mAP": "41.9",
+            "outputs": "Boxes",
+            "template": "CenterNet_HourGlass104_512x512.jinja",
+        },
     }
 
     def __init__(
@@ -275,6 +282,7 @@ class LuWuTFModelsObjectDetector(LuWuObjectDetector):
                 )
                 logger.info("预训练权重下载完成！")
         else:
+            self.fine_tune_checkpoint_path = ""
             logger.info("不使用预训练权重！")
 
         # 创建项目文件夹结构
@@ -335,6 +343,7 @@ class LuWuTFModelsObjectDetector(LuWuObjectDetector):
             "SSD ResNet50 V1 FPN 640x640 (RetinaNet50)",
             "EfficientDet D0 512x512",
             "CenterNet Resnet101 V1 FPN 512x512",
+            "CenterNet HourGlass104 512x512",
         ):
             params["num_classes"] = num_classes
             params["batch_size"] = self.batch_size
