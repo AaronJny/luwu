@@ -31,7 +31,7 @@ class LuWuObjectDetector:
         Args:
             origin_dataset_path (str): 处理前的数据集路径
             tfrecord_dataset_path (str): 处理后的tfrecord数据集路径
-            label_map_path (str): 目标检测类表映射表(pbtxt)
+            label_map_path (str): 目标检测类别映射表(pbtxt)
             model_save_path (str): 模型保存路径
             batch_size (int): mini batch 大小
             steps (int, optional): 训练steps数量. Defaults to 2000.
@@ -172,7 +172,7 @@ class LuWuTFModelsObjectDetector(LuWuObjectDetector):
         Args:
             origin_dataset_path (str): 处理前的数据集路径
             tfrecord_dataset_path (str): 处理后的tfrecord数据集路径
-            label_map_path (str): 目标检测类表映射表(pbtxt)
+            label_map_path (str): 目标检测类别映射表(pbtxt)
             do_fine_tune (bool): 是否在预训练模型的基础上进行微调
             fine_tune_checkpoint_path (str): 预训练权重路径
             fine_tune_model_name (str): 预训练模型名称
@@ -217,12 +217,12 @@ class LuWuTFModelsObjectDetector(LuWuObjectDetector):
         # 生成 tfrecord
         if self.need_generate_tfrecord:
             logger.info("遍历数据集，生成 tfrecord ...")
-            python_name = cmd_util.get_python_name()
+            python_execute_path = cmd_util.get_python_execute_path()
             script_path = os.path.join(
                 os.path.dirname(__file__), "utils", "generate_tfrecord.py"
             )
             csv_path = os.path.join(self.tfrecord_dataset_dir, "tmp.csv")
-            cmd = f"{python_name} {script_path} -x {self.origin_dataset_path} -l {self.label_map_file_path} -o {self.tfrecord_dataset_file_path} -c {csv_path}"
+            cmd = f"{python_execute_path} {script_path} -x {self.origin_dataset_path} -l {self.label_map_file_path} -o {self.tfrecord_dataset_file_path} -c {csv_path}"
             cmd_util.run_cmd(cmd)
             if os.path.exists(csv_path):
                 os.remove(csv_path)
@@ -371,16 +371,16 @@ class LuWuTFModelsObjectDetector(LuWuObjectDetector):
 
     def train(self):
         logger.info("开始训练...")
-        python_name = cmd_util.get_python_name()
-        cmd = f"{python_name} -m object_detection.model_main_tf2 --model_dir={self.train_checkpoint_path} --pipeline_config_path={self.train_pipeline_config_path}"
+        python_execute_path = cmd_util.get_python_execute_path()
+        cmd = f"{python_execute_path} -m object_detection.model_main_tf2 --model_dir={self.train_checkpoint_path} --pipeline_config_path={self.train_pipeline_config_path}"
         cmd_util.run_cmd(cmd)
         logger.info("训练完成！")
 
     def export_model(self):
         """将训练好的模型导出为pb格式"""
         logger.info("正在导出模型...")
-        python_name = cmd_util.get_python_name()
-        cmd = f"{python_name} -m object_detection.exporter_main_v2 --input_type image_tensor --pipeline_config_path {self.train_pipeline_config_path} --trained_checkpoint_dir {self.train_checkpoint_path} --output_directory {self.export_model_path}"
+        python_execute_path = cmd_util.get_python_execute_path()
+        cmd = f"{python_execute_path} -m object_detection.exporter_main_v2 --input_type image_tensor --pipeline_config_path {self.train_pipeline_config_path} --trained_checkpoint_dir {self.train_checkpoint_path} --output_directory {self.export_model_path}"
         cmd_util.run_cmd(cmd)
 
         # 复制一份label_map.pbtxt到该目录

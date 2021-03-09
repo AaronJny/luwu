@@ -1,15 +1,12 @@
 # -*- coding: utf-8 -*-
 # @Author       : AaronJny
-# @LastEditTime : 2021-03-08
+# @LastEditTime : 2021-03-09
 # @FilePath     : /LuWu/luwu/utils/cmd_util.py
 # @Desc         :
 import sys
 import os
-import json
 import subprocess
 import shlex
-
-PYTHON_NAME = None
 
 
 def run_cmd(cmd, raise_exception=True):
@@ -50,23 +47,11 @@ def run_cmd(cmd, raise_exception=True):
     return code
 
 
-def get_python_name():
+def get_python_execute_path():
     """获取luwu安装到的python名称
 
     Returns:
         [type]: [description]
     """
-    global PYTHON_NAME
-    if PYTHON_NAME:
-        return PYTHON_NAME
-    elif os.path.exists(os.path.expanduser("~/.luwu/config.json")):
-        with open(os.path.expanduser("~/.luwu/config.json"), "r") as f:
-            config = json.load(f)
-            python_name = config.get("python_env", {}).get("python_name", "")
-        if python_name:
-            PYTHON_NAME = python_name
-            return PYTHON_NAME
-        else:
-            return "python"
-    else:
-        return "python"
+    python_execute_path = sys.executable
+    return python_execute_path

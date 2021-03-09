@@ -1,6 +1,6 @@
 <!--
  * @Author       : AaronJny
- * @LastEditTime : 2021-02-01
+ * @LastEditTime : 2021-03-09
  * @FilePath     : /LuWu/README.MD
  * @Desc         : 
 -->
@@ -63,9 +63,10 @@
     - [ ] 图像回归
     - [ ] 文本回归
     - [ ] 时间序列回归
-  - [ ] 综合场景任务
-    - [ ] 图像类
-      - [ ] 目标检测
+  - [x] 综合场景任务
+    - [x] 图像类
+      - [x] 目标检测
+        - [x] 集成 TensorFlow Object Detection API
       - [ ] 语义分割
       - [ ] 实体分割
     - [ ] 文本类
@@ -138,8 +139,59 @@ python3 luwu/run.py
 
 ### 使用 Docker 运行
 
+陆吾支持通过Docker运行，提供 `CPU` 和 `GPU` 两种运行环境。
+
+首先，请需要安装好 `Docker`。没有安装的话，可以参考 [https://www.runoob.com/docker/ubuntu-docker-install.html](https://www.runoob.com/docker/ubuntu-docker-install.html)进行安装。
+
+使用 `CPU` :
+
 ```
-待补充
+# 拉取最新镜像
+docker pull aaronjny/luwu:latest
+# 运行容器
+docker run --name luwu -p 7788:7788 -v /home/xxx/data:/data aaronjny/luwu:latest
+```
+
+使用 `GPU` :
+
+`GPU`版本`Docker`镜像仅支持`Linux`系统。
+
+如果要使用 `GPU` 版本的镜像，则需要：
+
+1.在本机安装 Nvidia 显卡设备对应的最新版本的驱动
+
+2.如果没有安装 `nvidia-container-toolkit`，需要先在本机安装 `nvidia-container-toolkit`。具体安装参考[https://nvidia.github.io/nvidia-docker/](https://nvidia.github.io/nvidia-docker/)。
+
+以 `Debian` 系统的安装为例：
+
+```
+curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | \
+  sudo apt-key add -
+distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
+curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | \
+  sudo tee /etc/apt/sources.list.d/nvidia-docker.list
+sudo apt-get update
+sudo apt-get install nvidia-container-toolkit
+```
+
+对于使用 `Deepin` 的朋友，可以使用如下的指令安装：
+
+```
+distribution="debian10"
+curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | \
+  sudo apt-key add -
+curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | \
+  sudo tee /etc/apt/sources.list.d/nvidia-docker.list
+sudo apt-get update
+sudo apt-get install nvidia-container-toolkit
+```
+
+3.拉取并运行`GPU`版本容器。
+
+```
+docker pull aaronjny/luwu:gpu
+# 运行容器
+docker run --name luwu --gpus all -p 7788:7788 -v /home/xxx/data:/data aaronjny/luwu:gpu
 ```
 
 ## 使用说明

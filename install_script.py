@@ -1,30 +1,15 @@
 # -*- coding: utf-8 -*-
 # @Author       : AaronJny
-# @LastEditTime : 2021-03-08
-# @FilePath     : /LuWu/install.py
+# @LastEditTime : 2021-03-09
+# @FilePath     : /LuWu/install_script.py
 # @Desc         : Luwu一键安装脚本
 import argparse
-import json
 import os
 import platform
 import subprocess
 import sys
 
 parser = argparse.ArgumentParser(description="LuWu installation script.")
-parser.add_argument(
-    "-py",
-    "--python_name",
-    help="The name of the python shortcut pointing to the Python3.+ environment to be used. The default is python. ",
-    type=str,
-    default="python",
-)
-parser.add_argument(
-    "-pip",
-    "--pip_name",
-    help="The name of the pip shortcut pointing to the Python3.+ environment to be used. The default is pip.",
-    type=str,
-    default="pip",
-)
 parser.add_argument(
     "--proxy",
     help="Http proxy to increase download speed. e.g: http://localhost:7890",
@@ -66,22 +51,7 @@ def run_cmd(cmd):
         exit(code)
 
 
-def save_python_env(python_name, pip_name):
-    config_filepath = os.path.expanduser("~/.luwu/config.json")
-    if os.path.exists(config_filepath):
-        with open(config_filepath, "r") as f:
-            config = json.load(f)
-    else:
-        config = {"python_env": {}}
-    config["python_env"]["python_name"] = python_name
-    config["python_env"]["pip_name"] = pip_name
-    dirname = os.path.dirname(config_filepath)
-    os.makedirs(dirname, exist_ok=True)
-    with open(config_filepath, "w") as f:
-        json.dump(config, f, ensure_ascii=False, indent=2)
-
-
-def run():
+def run_install():
     stage_tip(1, "检查系统类型是否支持...")
     system = platform.system()
     if system == "Darwin":
@@ -97,20 +67,16 @@ def run():
         print("不支持的系统类型 {} ！".format(system))
         return -1
 
-    python_name = args.python_name
-    pip_name = args.pip_name
-    print("Python Name: {}".format(python_name))
-    print("Pip Name: {}".format(pip_name))
-    save_python_env(python_name, pip_name)
+    python_execute_path = sys.executable
+    pip_execute_path = f"{python_execute_path} -m pip"
 
     stage_tip(2, "正在安装 requirements.txt ...")
     cmd = "{} install -r requirements.txt -i https://mirrors.aliyun.com/pypi/simple/ ".format(
-        pip_name
+        pip_execute_path
     )
     run_cmd(cmd)
 
     from loguru import logger
-    from tqdm import tqdm
 
     stage_tip(3, "正在下载 TensorFlow Object Detection API ...", logger)
     cmd = "mkdir -p addons && cd addons && \
@@ -138,7 +104,7 @@ def run():
 
     stage_tip(5, "正在安装 cocoapi ...", logger)
     cmd = "{} install git+https://github.com/philferriere/cocoapi.git#subdirectory=PythonAPI".format(
-        pip_name
+        pip_execute_path
     )
     run_cmd(cmd)
 
@@ -146,17 +112,17 @@ def run():
     cmd = "cd addons/models/research/ && \
         cp object_detection/packages/tf2/setup.py . && \
         {} -m pip install .".format(
-        python_name
+        python_execute_path
     )
     run_cmd(cmd)
 
     stage_tip(7, "测试是否安装成功 ...", logger)
     cmd = "cd addons/models/research/ && \
         {} object_detection/builders/model_builder_tf2_test.py".format(
-        python_name
+        python_execute_path
     )
     run_cmd(cmd)
 
 
 if __name__ == "__main__":
-    run()
+    run_install()
