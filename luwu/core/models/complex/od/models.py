@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # @Author       : AaronJny
-# @LastEditTime : 2021-03-08
+# @LastEditTime : 2021-03-09
 # @FilePath     : /LuWu/luwu/core/models/complex/od/models.py
 # @Desc         :
 import os
@@ -129,6 +129,20 @@ class LuWuTFModelsObjectDetector(LuWuObjectDetector):
             "outputs": "Boxes",
             "template": "SSD_ResNet50_V1_FPN_640x640_(RetinaNet50).jinja",
         },
+        "EfficientDet D0 512x512": {
+            "url": "http://download.tensorflow.org/models/object_detection/tf2/20200711/efficientdet_d0_coco17_tpu-32.tar.gz",
+            "speed": "39",
+            "coco mAP": "33.6",
+            "outputs": "Boxes",
+            "template": "EfficientDet_D0_512x512.jinja",
+        },
+        "CenterNet Resnet101 V1 FPN 512x512": {
+            "url": "http://download.tensorflow.org/models/object_detection/tf2/20200711/centernet_resnet101_v1_fpn_512x512_coco17_tpu-8.tar.gz",
+            "speed": "34",
+            "coco mAP": "34.2",
+            "outputs": "Boxes",
+            "template": "CenterNet_Resnet101_V1_FPN_512x512.jinja",
+        },
     }
 
     def __init__(
@@ -136,6 +150,7 @@ class LuWuTFModelsObjectDetector(LuWuObjectDetector):
         origin_dataset_path: str = "",
         tfrecord_dataset_path: str = "",
         label_map_path: str = "",
+        do_fine_tune: bool = True,
         fine_tune_checkpoint_path: str = "",
         fine_tune_model_name: str = "",
         model_save_path: str = "",
@@ -151,6 +166,7 @@ class LuWuTFModelsObjectDetector(LuWuObjectDetector):
             origin_dataset_path (str): 处理前的数据集路径
             tfrecord_dataset_path (str): 处理后的tfrecord数据集路径
             label_map_path (str): 目标检测类表映射表(pbtxt)
+            do_fine_tune (bool): 是否在预训练模型的基础上进行微调
             fine_tune_checkpoint_path (str): 预训练权重路径
             fine_tune_model_name (str): 预训练模型名称
             model_save_path (str): 模型保存路径
@@ -168,6 +184,7 @@ class LuWuTFModelsObjectDetector(LuWuObjectDetector):
             project_id=project_id,
             **kwargs,
         )
+        self.do_fine_tune = do_fine_tune
         fine_tune_checkpoint_path = file_util.abspath(fine_tune_checkpoint_path)
         self.fine_tune_checkpoint_path = fine_tune_checkpoint_path
         self.fine_tune_model_name = fine_tune_model_name
@@ -205,38 +222,48 @@ class LuWuTFModelsObjectDetector(LuWuObjectDetector):
         else:
             logger.info(f"tfrecord 文件已存在，路径为{self.tfrecord_dataset_file_path}，跳过！")
 
-        # 下载预训练权重
-        if self.fine_tune_checkpoint_path:
+        if self.do_fine_tune:
+            # 下载预训练权重
             url = self.fine_tune_models_config_map[self.fine_tune_model_name]["url"]
             download_dir_name = url.split("/")[-1].split(".")[0]
             cache_dir_path = os.path.expanduser(
                 "~/.luwu/tensorflow-models/object-detection/"
             )
-            # 如果给定路径指向了checkpoint文件夹下ckpt-0.index文件
-            if self.fine_tune_checkpoint_path.endswith(".index"):
-                file_path = self.fine_tune_checkpoint_path
-                self.fine_tune_checkpoint_path = self.fine_tune_checkpoint_path.rstrip(
-                    ".index"
-                )
-            # 指向checkpoint文件夹
-            elif (
-                (
-                    self.fine_tune_checkpoint_path.endswith("checkpoint/")
-                    or self.fine_tune_checkpoint_path.endswith("checkpoint")
-                )
-                and os.path.exists(self.fine_tune_checkpoint_path)
-                and os.path.isdir(self.fine_tune_checkpoint_path)
-            ):
-                file_path = os.path.join(self.fine_tune_checkpoint_path, "ckpt-0.index")
-                self.fine_tune_checkpoint_path = os.path.join(
-                    self.fine_tune_checkpoint_path, "ckpt-0"
-                )
-            # 默认的checkpoint路径
+            if self.fine_tune_checkpoint_path:
+                # 如果给定路径指向了checkpoint文件夹下ckpt-0.index文件
+                if self.fine_tune_checkpoint_path.endswith(".index"):
+                    file_path = self.fine_tune_checkpoint_path
+                    self.fine_tune_checkpoint_path = (
+                        self.fine_tune_checkpoint_path.rstrip(".index")
+                    )
+                # 指向checkpoint文件夹
+                elif (
+                    (
+                        self.fine_tune_checkpoint_path.endswith("checkpoint/")
+                        or self.fine_tune_checkpoint_path.endswith("checkpoint")
+                    )
+                    and os.path.exists(self.fine_tune_checkpoint_path)
+                    and os.path.isdir(self.fine_tune_checkpoint_path)
+                ):
+                    file_path = os.path.join(
+                        self.fine_tune_checkpoint_path, "ckpt-0.index"
+                    )
+                    self.fine_tune_checkpoint_path = os.path.join(
+                        self.fine_tune_checkpoint_path, "ckpt-0"
+                    )
+                # 默认的checkpoint路径
+                else:
+                    self.fine_tune_checkpoint_path = os.path.join(
+                        cache_dir_path,
+                        download_dir_name,
+                        "checkpoint/ckpt-0",
+                    )
+                    file_path = self.fine_tune_checkpoint_path + ".index"
             else:
                 self.fine_tune_checkpoint_path = os.path.join(
                     cache_dir_path,
                     download_dir_name,
-                    "ckpt-0",
+                    "checkpoint/ckpt-0",
                 )
                 file_path = self.fine_tune_checkpoint_path + ".index"
             # 检查文件是否存在
@@ -247,6 +274,8 @@ class LuWuTFModelsObjectDetector(LuWuObjectDetector):
                     download_dir_name, url, untar=True, cache_subdir=cache_dir_path
                 )
                 logger.info("预训练权重下载完成！")
+        else:
+            logger.info("不使用预训练权重！")
 
         # 创建项目文件夹结构
         # 根文件夹，如果存在则会抛出异常
@@ -302,7 +331,11 @@ class LuWuTFModelsObjectDetector(LuWuObjectDetector):
         label_map_dict = label_map_util.get_label_map_dict(self.label_map_file_path)
         num_classes = len(label_map_dict)
         # TODO: 优化初始步数生成规则，不再使用默认值
-        if self.fine_tune_model_name == "SSD ResNet50 V1 FPN 640x640 (RetinaNet50)":
+        if self.fine_tune_model_name in (
+            "SSD ResNet50 V1 FPN 640x640 (RetinaNet50)",
+            "EfficientDet D0 512x512",
+            "CenterNet Resnet101 V1 FPN 512x512",
+        ):
             params["num_classes"] = num_classes
             params["batch_size"] = self.batch_size
             params["num_steps"] = self.steps
