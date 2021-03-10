@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # @Author       : AaronJny
-# @LastEditTime : 2021-01-23
-# @FilePath     : /app/luwu/core/models/image.py
+# @LastEditTime : 2021-03-09
+# @FilePath     : /LuWu/luwu/core/models/image.py
 # @Desc         : 图像处理相关模型
 from luwu.core.models.classifier import (
     LuwuDenseNet121ImageClassifier,
@@ -24,7 +24,16 @@ from luwu.core.models.classifier import (
     LuwuMobileNetV3SmallImageClassifier,
     LuwuMobileNetV3LargeImageClassifier,
     LuwuXceptionImageClassifier,
+    LuwuEfficientNetB0ImageClassifier,
+    LuwuEfficientNetB1ImageClassifier,
+    LuwuEfficientNetB2ImageClassifier,
+    LuwuEfficientNetB3ImageClassifier,
+    LuwuEfficientNetB4ImageClassifier,
+    LuwuEfficientNetB5ImageClassifier,
+    LuwuEfficientNetB6ImageClassifier,
+    LuwuEfficientNetB7ImageClassifier,
 )
+from luwu.core.models.complex.od.models import LuWuTFModelsObjectDetector
 
 pre_trained_classifiers = [
     LuwuDenseNet121ImageClassifier,
@@ -47,6 +56,17 @@ pre_trained_classifiers = [
     LuwuMobileNetV3SmallImageClassifier,
     LuwuMobileNetV3LargeImageClassifier,
     LuwuXceptionImageClassifier,
+    LuwuEfficientNetB0ImageClassifier,
+    LuwuEfficientNetB1ImageClassifier,
+    LuwuEfficientNetB2ImageClassifier,
+    LuwuEfficientNetB3ImageClassifier,
+    LuwuEfficientNetB4ImageClassifier,
+    LuwuEfficientNetB5ImageClassifier,
+    LuwuEfficientNetB6ImageClassifier,
+    LuwuEfficientNetB7ImageClassifier,
+]
+tf_models_detectors = [
+    LuWuTFModelsObjectDetector,
 ]
 
 __all__ = [
@@ -70,5 +90,15 @@ __all__ = [
     "LuwuMobileNetV3SmallImageClassifier",
     "LuwuMobileNetV3LargeImageClassifier",
     "LuwuXceptionImageClassifier",
+    "LuwuEfficientNetB0ImageClassifier",
+    "LuwuEfficientNetB1ImageClassifier",
+    "LuwuEfficientNetB2ImageClassifier",
+    "LuwuEfficientNetB3ImageClassifier",
+    "LuwuEfficientNetB4ImageClassifier",
+    "LuwuEfficientNetB5ImageClassifier",
+    "LuwuEfficientNetB6ImageClassifier",
+    "LuwuEfficientNetB7ImageClassifier",
     "pre_trained_classifiers",
+    "LuWuTFModelsObjectDetector",
+    "tf_models_detectors",
 ]

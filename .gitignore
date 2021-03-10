@@ -156,3 +156,7 @@ images2/
 demo*.py
 do*.py
 luwu/demo.ipynb
+addons/*
+build/*
+dist/*
+luwu.egg-info/*

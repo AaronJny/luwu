@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Date         : 2021-01-21
 # @Author       : AaronJny
-# @LastEditTime : 2021-01-27
-# @FilePath     : /app/luwu/core/models/classifier/preset/pre_trained.py
+# @LastEditTime : 2021-03-06
+# @FilePath     : /LuWu/luwu/core/models/classifier/preset/pre_trained.py
 # @Desc         : 封装tf.keras里设置的预训练模型，并对外提供支持
 import os
 
@@ -170,3 +170,43 @@ class LuwuMobileNetV3LargeImageClassifier(LuwuPreTrainedImageClassifier):
 class LuwuXceptionImageClassifier(LuwuPreTrainedImageClassifier):
     def __init__(self, net_name="Xception", **kwargs):
         super(LuwuXceptionImageClassifier, self).__init__(net_name, **kwargs)
+
+
+class LuwuEfficientNetB0ImageClassifier(LuwuPreTrainedImageClassifier):
+    def __init__(self, net_name="EfficientNetB0", **kwargs):
+        super(LuwuEfficientNetB0ImageClassifier, self).__init__(net_name, **kwargs)
+
+
+class LuwuEfficientNetB1ImageClassifier(LuwuPreTrainedImageClassifier):
+    def __init__(self, net_name="EfficientNetB1", **kwargs):
+        super(LuwuEfficientNetB1ImageClassifier, self).__init__(net_name, **kwargs)
+
+
+class LuwuEfficientNetB2ImageClassifier(LuwuPreTrainedImageClassifier):
+    def __init__(self, net_name="EfficientNetB2", **kwargs):
+        super(LuwuEfficientNetB2ImageClassifier, self).__init__(net_name, **kwargs)
+
+
+class LuwuEfficientNetB3ImageClassifier(LuwuPreTrainedImageClassifier):
+    def __init__(self, net_name="EfficientNetB3", **kwargs):
+        super(LuwuEfficientNetB3ImageClassifier, self).__init__(net_name, **kwargs)
+
+
+class LuwuEfficientNetB4ImageClassifier(LuwuPreTrainedImageClassifier):
+    def __init__(self, net_name="EfficientNetB4", **kwargs):
+        super(LuwuEfficientNetB4ImageClassifier, self).__init__(net_name, **kwargs)
+
+
+class LuwuEfficientNetB5ImageClassifier(LuwuPreTrainedImageClassifier):
+    def __init__(self, net_name="EfficientNetB5", **kwargs):
+        super(LuwuEfficientNetB5ImageClassifier, self).__init__(net_name, **kwargs)
+
+
+class LuwuEfficientNetB6ImageClassifier(LuwuPreTrainedImageClassifier):
+    def __init__(self, net_name="EfficientNetB6", **kwargs):
+        super(LuwuEfficientNetB6ImageClassifier, self).__init__(net_name, **kwargs)
+
+
+class LuwuEfficientNetB7ImageClassifier(LuwuPreTrainedImageClassifier):
+    def __init__(self, net_name="EfficientNetB7", **kwargs):
+        super(LuwuEfficientNetB7ImageClassifier, self).__init__(net_name, **kwargs)

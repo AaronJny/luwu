@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # @Date         : 2020-12-30
 # @Author       : AaronJny
-# @LastEditTime : 2021-01-28
+# @LastEditTime : 2021-03-06
 # @FilePath     : /LuWu/luwu/core/models/classifier/__init__.py
 # @Desc         :
 import os
@@ -177,6 +177,14 @@ from luwu.core.models.classifier.preset import (
     LuwuVGG16ImageClassifier,
     LuwuVGG19ImageClassifier,
     LuwuXceptionImageClassifier,
+    LuwuEfficientNetB0ImageClassifier,
+    LuwuEfficientNetB1ImageClassifier,
+    LuwuEfficientNetB2ImageClassifier,
+    LuwuEfficientNetB3ImageClassifier,
+    LuwuEfficientNetB4ImageClassifier,
+    LuwuEfficientNetB5ImageClassifier,
+    LuwuEfficientNetB6ImageClassifier,
+    LuwuEfficientNetB7ImageClassifier,
 )
 
 __all__ = [
@@ -202,4 +210,12 @@ __all__ = [
     "LuwuMobileNetV3SmallImageClassifier",
     "LuwuMobileNetV3LargeImageClassifier",
     "LuwuXceptionImageClassifier",
+    "LuwuEfficientNetB0ImageClassifier",
+    "LuwuEfficientNetB1ImageClassifier",
+    "LuwuEfficientNetB2ImageClassifier",
+    "LuwuEfficientNetB3ImageClassifier",
+    "LuwuEfficientNetB4ImageClassifier",
+    "LuwuEfficientNetB5ImageClassifier",
+    "LuwuEfficientNetB6ImageClassifier",
+    "LuwuEfficientNetB7ImageClassifier",
 ]

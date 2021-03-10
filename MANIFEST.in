@@ -1,0 +1,10 @@
+include MANIFEST.in
+include LICENSE
+include requirements.txt
+include bin/luwu.py
+include setup.py
+include install_script.py
+include luwu/core/models/classifier/preset/templates/*
+include luwu/core/preprocess/data/templates/*
+include luwu/dist/**/*
+include luwu/core/models/complex/od/templates/**/*
