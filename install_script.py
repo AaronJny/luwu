@@ -3,25 +3,10 @@
 # @LastEditTime : 2021-03-09
 # @FilePath     : /LuWu/install_script.py
 # @Desc         : Luwu一键安装脚本
-import argparse
 import os
 import platform
 import subprocess
 import sys
-
-parser = argparse.ArgumentParser(description="LuWu installation script.")
-parser.add_argument(
-    "--proxy",
-    help="Http proxy to increase download speed. e.g: http://localhost:7890",
-    type=str,
-    default="",
-)
-
-args = parser.parse_args()
-
-if args.proxy:
-    os.environ["http_proxy"] = args.proxy
-    os.environ["https_proxy"] = args.proxy
 
 
 def stage_tip(num, msg, logger=None):

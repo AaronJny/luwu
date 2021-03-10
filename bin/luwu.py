@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # @Author       : AaronJny
-# @LastEditTime : 2021-03-09
-# @FilePath     : /LuWu/luwu_cmd_tool.py
+# @LastEditTime : 2021-03-10
+# @FilePath     : /LuWu/bin/luwu.py
 # @Desc         :
 import argparse
 
@@ -79,16 +79,20 @@ parse_object_detection.add_argument(
 # TODO:增加分类任务的命令行执行
 args = parser.parse_args()
 print(args)
-print(args._get_args())
-print(args._get_kwargs())
 
-if args.cmd == "web-server":
-    from luwu import run
 
-    run.run()
-elif args.cmd == "detection":
-    from luwu.core.models.image import LuWuTFModelsObjectDetector
+def run():
+    if args.cmd == "web-server":
+        from luwu import run
 
-    LuWuTFModelsObjectDetector(**dict(args._get_kwargs()))
-else:
-    print("请检查指令是否有误！")
+        run.run()
+    elif args.cmd == "detection":
+        from luwu.core.models.image import LuWuTFModelsObjectDetector
+
+        LuWuTFModelsObjectDetector(**dict(args._get_kwargs())).run()
+    else:
+        print("请检查指令是否有误！")
+
+
+if __name__ == "__main__":
+    run()
