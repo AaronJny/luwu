@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # @Author       : AaronJny
-# @LastEditTime : 2021-03-10
+# @LastEditTime : 2021-03-11
 # @FilePath     : /LuWu/bin/luwu.py
 # @Desc         :
 import argparse
@@ -77,6 +77,50 @@ parse_object_detection.add_argument(
 )
 
 # TODO:增加分类任务的命令行执行
+parse_classification = subparsers.add_parser("classification", help="通过命令行进行图像分类任务训练。")
+parse_classification.set_defaults(cmd="classification")
+parse_classification.add_argument(
+    "network_name",
+    help="分类器名称，支持的分类器有：[LuwuDenseNet121ImageClassifier,\
+        LuwuDenseNet169ImageClassifier,LuwuDenseNet201ImageClassifier,\
+        LuwuVGG16ImageClassifier,LuwuVGG19ImageClassifier,LuwuMobileNetImageClassifier,\
+        LuwuMobileNetV2ImageClassifier,LuwuInceptionResNetV2ImageClassifier,\
+        LuwuInceptionV3ImageClassifier,LuwuNASNetMobileImageClassifier,\
+        LuwuNASNetLargeImageClassifier,LuwuResNet50ImageClassifier,\
+        LuwuResNet50V2ImageClassifier,LuwuResNet101ImageClassifier,\
+        LuwuResNet101V2ImageClassifier,LuwuResNet152ImageClassifier,\
+        LuwuResNet152V2ImageClassifier,LuwuMobileNetV3SmallImageClassifier,\
+        LuwuMobileNetV3LargeImageClassifier,LuwuXceptionImageClassifier,\
+        LuwuEfficientNetB0ImageClassifier,LuwuEfficientNetB1ImageClassifier,\
+        LuwuEfficientNetB2ImageClassifier,LuwuEfficientNetB3ImageClassifier,\
+        LuwuEfficientNetB4ImageClassifier,LuwuEfficientNetB5ImageClassifier,\
+        LuwuEfficientNetB6ImageClassifier,LuwuEfficientNetB7ImageClassifier]",
+)
+parse_classification.add_argument(
+    "--origin_dataset_path", help="处理前的数据集路径", type=str, default=""
+)
+parse_classification.add_argument(
+    "--target_dataset_path", help="处理后的tfrecord数据集路径", type=str, default=""
+)
+parse_classification.add_argument(
+    "--model_save_path", help="模型保存路径", type=str, default=""
+)
+parse_classification.add_argument(
+    "--validation_split", help="验证集切割比例。默认 0.2", type=float, default=0.2
+)
+parse_classification.add_argument(
+    "--do_fine_tune", help="是进行fine tune，还是重新训练。默认 False", type=bool, default=False
+)
+parse_classification.add_argument(
+    "--batch_size", help="mini batch 大小。默认 32.", type=int, default=8
+)
+parse_classification.add_argument(
+    "--epochs", help="训练epoch数。默认 30.", type=int, default=30
+)
+parse_classification.add_argument(
+    "--project_id", help="项目编号. Defaults to 0.", type=int, default=0
+)
+
 args = parser.parse_args()
 print(args)
 
@@ -90,6 +134,18 @@ def run():
         from luwu.core.models.image import LuWuTFModelsObjectDetector
 
         LuWuTFModelsObjectDetector(**dict(args._get_kwargs())).run()
+    elif args.cmd == "classification":
+        class_name = args.network_name
+        net_name = class_name.lstrip("Luwu").rstrip("ImageClassifier")
+        import importlib
+
+        luwu_image = importlib.import_module("luwu.core.models.image")
+        # from luwu.core.models import image as luwu_image
+
+        classifier_class = getattr(luwu_image, class_name)
+        params = dict(args._get_kwargs())
+        params["net_name"] = net_name
+        classifier_class(**params).run()
     else:
         print("请检查指令是否有误！")
 

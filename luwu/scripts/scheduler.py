@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # @Author       : AaronJny
-# @LastEditTime : 2021-01-28
-# @FilePath     : /app/luwu/scripts/scheduler.py
+# @LastEditTime : 2021-03-13
+# @FilePath     : /LuWu/luwu/scripts/scheduler.py
 # @Desc         :
 import multiprocessing
 import os
@@ -19,7 +19,11 @@ from luwu.scripts.utils import (
 def run_project(project):
     params = project["params"]
     model_save_path = params["model_save_path"]
-    log_path = os.path.join(model_save_path, f'project-{project["id"]}.log')
+    log_path = os.path.join(
+        model_save_path,
+        f"luwu-classification-project-{project['id']}",
+        f"train.log",
+    )
     curdir = os.path.abspath(os.path.dirname(__file__))
     cd_path = os.path.abspath(os.path.join(os.path.join(curdir, ".."), ".."))
     py_path = os.path.join("." + curdir[len(cd_path) :], "train_project.py")

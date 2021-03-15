@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # @Author       : AaronJny
-# @LastEditTime : 2021-02-01
+# @LastEditTime : 2021-03-13
 # @FilePath     : /LuWu/luwu/backend/v1.py
 # @Desc         :
 import json
@@ -208,7 +208,9 @@ def read_project_logs_by_id(xid, start_line):
     if not tp:
         raise Exception("指定项目编号不存在！")
     model_save_path = tp.params["model_save_path"]
-    log_path = os.path.join(model_save_path, f"project-{xid}.log")
+    log_path = os.path.join(
+        model_save_path, f"luwu-classification-project-{xid}", f"train.log"
+    )
     if not os.path.exists(log_path):
         raise Exception("暂无日志！请稍后再试...")
     lines = []

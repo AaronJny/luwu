@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # @Author       : AaronJny
-# @LastEditTime : 2021-03-10
+# @LastEditTime : 2021-03-15
 # @FilePath     : /LuWu/setup.py
 # @Desc         :
 import os
@@ -40,7 +40,7 @@ class LuwuInstallScripts(install_scripts):
 
 setup(
     name="luwu",
-    version="0.17",
+    version="0.24",
     author="AaronJny",
     author_email="aaronjny7@gmail.com",
     description="LuWu——陆吾，一个简单的无代码深度学习平台。",
@@ -50,7 +50,7 @@ setup(
     python_requires=">=3.6.5",
     scripts=["bin/luwu.py"],
     cmdclass={
-        "install": LuwuInstallCommand,
+        # "install": LuwuInstallCommand,
         "install_scripts": LuwuInstallScripts,
     },
 )

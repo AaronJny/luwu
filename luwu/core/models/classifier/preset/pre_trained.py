@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # @Date         : 2021-01-21
 # @Author       : AaronJny
-# @LastEditTime : 2021-03-06
+# @LastEditTime : 2021-03-15
 # @FilePath     : /LuWu/luwu/core/models/classifier/preset/pre_trained.py
 # @Desc         : 封装tf.keras里设置的预训练模型，并对外提供支持
 import os
@@ -23,12 +23,19 @@ class LuwuPreTrainedImageClassifier(LuwuImageClassifier):
         pre_trained_net.trainable = False
         # 记录densenet
         self.pre_trained_net = pre_trained_net
+        # model = tf.keras.Sequential(
+        #     [
+        #         pre_trained_net,
+        #         tf.keras.layers.Flatten(),
+        #         tf.keras.layers.Dense(120, activation="relu"),
+        #         tf.keras.layers.Dropout(0.3),
+        #         tf.keras.layers.Dense(len(self.classes_num_dict), activation="softmax"),
+        #     ]
+        # )
         model = tf.keras.Sequential(
             [
                 pre_trained_net,
                 tf.keras.layers.Flatten(),
-                tf.keras.layers.Dense(120, activation="relu"),
-                tf.keras.layers.Dropout(0.3),
                 tf.keras.layers.Dense(len(self.classes_num_dict), activation="softmax"),
             ]
         )
@@ -39,6 +46,43 @@ class LuwuPreTrainedImageClassifier(LuwuImageClassifier):
         )
         self.model = model
         return model
+
+    def train(self):
+        # callbacks
+        checkpoint = tf.keras.callbacks.ModelCheckpoint(
+            self.model_save_path, monitor="val_accuracy", save_best_only=True
+        )
+        if self.do_fine_tune:
+            pre_train_epochs = int(self.epochs / 2)
+        else:
+            pre_train_epochs = 0
+        train_epochs = self.epochs - pre_train_epochs
+        # 训练
+        if pre_train_epochs:
+            self.model.fit(
+                self.train_dataset.for_fit(),
+                initial_epoch=0,
+                epochs=pre_train_epochs,
+                steps_per_epoch=self.train_dataset.steps,
+                validation_data=self.dev_dataset.for_fit(),
+                validation_steps=self.dev_dataset.steps,
+                callbacks=[
+                    checkpoint,
+                ],
+            )
+        if train_epochs:
+            self.pre_trained_net.trainable = True
+            self.model.fit(
+                self.train_dataset.for_fit(),
+                initial_epoch=pre_train_epochs,
+                epochs=self.epochs,
+                steps_per_epoch=self.train_dataset.steps,
+                validation_data=self.dev_dataset.for_fit(),
+                validation_steps=self.dev_dataset.steps,
+                callbacks=[
+                    checkpoint,
+                ],
+            )
 
     def get_call_code(self):
         """返回模型定义和模型调用的代码"""
@@ -52,6 +96,7 @@ class LuwuPreTrainedImageClassifier(LuwuImageClassifier):
                 "net_name": self.net_name,
                 "num_classes": len(self.classes_num_dict),
                 "num_classes_map": str(self.classes_num_dict_rev),
+                "image_size": self.image_size,
                 "model_path": self.model_save_path,
                 "data_preprocess_template": self.train_dataset.generate_preprocess_code(),
             }
@@ -63,13 +108,76 @@ class LuwuPreTrainedImageClassifier(LuwuImageClassifier):
     def save_code(self):
         """导出模型定义和模型调用的代码"""
         code = self.get_call_code()
-        if self.project_id:
-            code_file_name = f"luwu-code-project-{self.project_id}.py"
-        else:
-            code_file_name = "luwu-code.py"
-        code_path = os.path.join(os.path.dirname(self.model_save_path), code_file_name)
+        code_file_name = "luwu-code.py"
+        code_path = os.path.join(self.project_save_path, code_file_name)
         with open(code_path, "w") as f:
             f.write(code)
+
+
+class LuwuLeNetImageClassifier(LuwuPreTrainedImageClassifier):
+    def __init__(self, *args, image_size=32, **kwargs):
+        kwargs["net_name"] = "LeNet"
+        super(LuwuLeNetImageClassifier, self).__init__(*args, **kwargs)
+        self.image_size = image_size
+
+    def build_model(self):
+        model = tf.keras.Sequential(
+            [
+                tf.keras.layers.Conv2D(6, (5, 5), padding="same"),
+                # 添加BN层，将数据调整为均值0，方差1
+                tf.keras.layers.BatchNormalization(),
+                # 最大池化层，池化后图片长宽减半
+                tf.keras.layers.MaxPooling2D((2, 2), 2),
+                # relu激活层
+                tf.keras.layers.ReLU(),
+                # 第二个卷积层
+                tf.keras.layers.Conv2D(16, (5, 5)),
+                tf.keras.layers.BatchNormalization(),
+                tf.keras.layers.MaxPooling2D((2, 2), 2),
+                tf.keras.layers.ReLU(),
+                # 将节点展平为(None,-1)的形式，以作为全连接层的输入
+                tf.keras.layers.Flatten(),
+                # 第一个全连接层，120个节点
+                tf.keras.layers.Dense(120),
+                tf.keras.layers.BatchNormalization(),
+                tf.keras.layers.ReLU(),
+                # 第二个全连接层
+                tf.keras.layers.Dense(84),
+                tf.keras.layers.BatchNormalization(),
+                tf.keras.layers.ReLU(),
+                tf.keras.layers.Dropout(0.3),
+                # 输出层，使用softmax激活
+                tf.keras.layers.Dense(len(self.classes_num_dict), activation="softmax"),
+            ]
+        )
+        use_regularizer = True
+        if use_regularizer:
+            for layer in model.layers:
+                if hasattr(layer, "kernel_regularizer"):
+                    layer.kernel_regularizer = tf.keras.regularizers.l2(0.01)
+        model.compile(
+            optimizer=tf.keras.optimizers.Adam(),
+            loss=tf.keras.losses.categorical_crossentropy,
+            metrics=["accuracy"],
+        )
+        self.model = model
+        return model
+
+    def train(self):
+        # callbacks
+        checkpoint = tf.keras.callbacks.ModelCheckpoint(
+            self.model_save_path, monitor="val_accuracy", save_best_only=True
+        )
+        self.model.fit(
+            self.train_dataset.for_fit(),
+            epochs=self.epochs,
+            steps_per_epoch=self.train_dataset.steps,
+            validation_data=self.dev_dataset.for_fit(),
+            validation_steps=self.dev_dataset.steps,
+            callbacks=[
+                checkpoint,
+            ],
+        )
 
 
 class LuwuDenseNet121ImageClassifier(LuwuPreTrainedImageClassifier):

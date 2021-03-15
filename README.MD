@@ -1,6 +1,6 @@
 <!--
  * @Author       : AaronJny
- * @LastEditTime : 2021-03-09
+ * @LastEditTime : 2021-03-10
  * @FilePath     : /LuWu/README.MD
  * @Desc         : 
 -->
@@ -109,7 +109,7 @@
 
 ## 运行项目
 
-当前支持两种运行方式，使用 `Docker` 或 `Clone` 项目代码。
+当前支持三种运行方式，使用 `pip` 、 `Docker` 或 `Clone` 项目代码。
 
 ### Clone 项目代码
 
@@ -124,8 +124,8 @@ conda create -n luwu python=3.7
 conda activate luwu
 git clone https://github.com/AaronJny/luwu.git
 cd luwu
-pip install -r requirements.txt
-python luwu/run.py
+python setup.py install
+luwu -h
 ```
 
 使用非Anaconda版本的Python启动项目：
@@ -133,8 +133,16 @@ python luwu/run.py
 ```sh
 git clone https://github.com/AaronJny/luwu.git
 cd luwu
-pip install -r requirements.txt
-python3 luwu/run.py
+python setup.py install
+luwu -h
+```
+
+
+### 使用 `pip` 安装
+
+```sh
+pip install luwu
+luwu -h
 ```
 
 ### 使用 Docker 运行
@@ -145,7 +153,7 @@ python3 luwu/run.py
 
 使用 `CPU` :
 
-```
+```sh
 # 拉取最新镜像
 docker pull aaronjny/luwu:latest
 # 运行容器
@@ -164,7 +172,7 @@ docker run --name luwu -p 7788:7788 -v /home/xxx/data:/data aaronjny/luwu:latest
 
 以 `Debian` 系统的安装为例：
 
-```
+```sh
 curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | \
   sudo apt-key add -
 distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
@@ -176,7 +184,7 @@ sudo apt-get install nvidia-container-toolkit
 
 对于使用 `Deepin` 的朋友，可以使用如下的指令安装：
 
-```
+```sh
 distribution="debian10"
 curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | \
   sudo apt-key add -
@@ -188,7 +196,7 @@ sudo apt-get install nvidia-container-toolkit
 
 3.拉取并运行`GPU`版本容器。
 
-```
+```sh
 docker pull aaronjny/luwu:gpu
 # 运行容器
 docker run --name luwu --gpus all -p 7788:7788 -v /home/xxx/data:/data aaronjny/luwu:gpu
@@ -196,7 +204,13 @@ docker run --name luwu --gpus all -p 7788:7788 -v /home/xxx/data:/data aaronjny/
 
 ## 使用说明
 
-1.按照上面的说明之一，将项目运行起来。
+### 一、以 Web 服务的方式使用陆吾
+
+> 当前陆吾的 Web 服务仅支持图像分类任务。其他任务等待适配...
+
+1.按照上面的说明之一，将陆吾安装好。
+
+在命令行中使用指令 `luwu web-server` 启动 `Web` 服务。
 
 项目默认运行在 7788 端口，在浏览器中打开 [http://localhost:7788/](http://localhost:7788/) 即可进入项目主页。
 
@@ -281,6 +295,91 @@ docker run --name luwu --gpus all -p 7788:7788 -v /home/xxx/data:/data aaronjny/
 ![](asserts/训练5.png)
 
 使用说明就到这里了，训练好的模型和调用方法都给你了，还要啥自行车？
+
+
+### 二、以命令行工具的方式使用陆吾
+
+> 当前陆吾的命令行工具仅支持如下功能：
+> - 启动 Web 服务
+> - 执行目标检测任务
+> 
+> 其他功能正在适配中...
+
+查看陆吾支持的功能:
+
+```sh
+luwu -h
+```
+
+output:
+
+```
+usage: luwu [-h] {web-server,detection} ...
+
+Luwu命令行工具。 你完全可以不写任何代码，就能够完成深度学习任务的开发。 LuWu command tool. You can complete the
+development of deep learning tasks without writing any code.
+
+optional arguments:
+  -h, --help            show this help message and exit
+
+cmd:
+  命令参数，用以指定 Luwu 将要执行的操作
+
+  {web-server,detection}
+    web-server          以web服务的形式启动Luwu，从而通过图形界面完成深度学习任务的开发。
+    detection           通过命令行进行目标检测任务训练。
+```
+
+启动 Web 服务：
+
+```sh
+luwu web-server
+```
+
+训练一个目标检测任务：
+
+```sh
+luwu detection -h
+```
+
+output:
+
+```
+usage: luwu detection [-h] [--origin_dataset_path ORIGIN_DATASET_PATH]
+                      [--tfrecord_dataset_path TFRECORD_DATASET_PATH]
+                      [--label_map_path LABEL_MAP_PATH]
+                      [--do_fine_tune DO_FINE_TUNE]
+                      [--fine_tune_checkpoint_path FINE_TUNE_CHECKPOINT_PATH]
+                      [--fine_tune_model_name FINE_TUNE_MODEL_NAME]
+                      [--model_save_path MODEL_SAVE_PATH]
+                      [--batch_size BATCH_SIZE] [--steps STEPS]
+                      [--project_id PROJECT_ID]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --origin_dataset_path ORIGIN_DATASET_PATH
+                        处理前的数据集路径
+  --tfrecord_dataset_path TFRECORD_DATASET_PATH
+                        处理后的tfrecord数据集路径
+  --label_map_path LABEL_MAP_PATH
+                        目标检测类别映射表(pbtxt)
+  --do_fine_tune DO_FINE_TUNE
+                        是否在预训练模型的基础上进行微调
+  --fine_tune_checkpoint_path FINE_TUNE_CHECKPOINT_PATH
+                        预训练权重路径
+  --fine_tune_model_name FINE_TUNE_MODEL_NAME
+                        预训练模型名称。可选值的列表为["SSD ResNet50 V1 FPN 640x640
+                        (RetinaNet50)","EfficientDet D0 512x512","CenterNet
+                        Resnet101 V1 FPN 512x512","CenterNet HourGlass104
+                        512x512"]
+  --model_save_path MODEL_SAVE_PATH
+                        模型保存路径
+  --batch_size BATCH_SIZE
+                        mini batch 大小。默认 8.
+  --steps STEPS         训练steps数量. Defaults to 2000.
+  --project_id PROJECT_ID
+                        项目编号. Defaults to 0.
+```
 
 
 ## Code Contributors

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # @Date         : 2021-01-07
 # @Author       : AaronJny
-# @LastEditTime : 2021-01-21
+# @LastEditTime : 2021-03-13
 # @FilePath     : /LuWu/luwu/core/preprocess/image/process.py
 # @Desc         :
 import tensorflow as tf
@@ -21,13 +21,12 @@ def extract_image_and_label_from_record(example_string):
     return feature_dict["image"], y
 
 
-def normalized_image(image, label):
+def normalized_image(image, label, image_size):
     # min_size = 28
     # max_size = 224
     # # 限定图片大小
     # image_size = max(min_size, image.shape[0])
     # image_size = min(image_size, max_size)
-    image_size = 224
     # 缩放图片
     x = tf.image.resize(image, [image_size, image_size])
     # 将图片的像素值缩放到[0,1]之间
@@ -35,13 +34,13 @@ def normalized_image(image, label):
     return x, label
 
 
-def normalized_image_with_imagenet(image, label):
+def normalized_image_with_imagenet(image, label, image_size):
     # imagenet数据集均值
     image_mean = [0.485, 0.456, 0.406]
     # imagenet数据集标准差
     image_std = [0.299, 0.224, 0.225]
     # 缩放图片
-    x = tf.image.resize(image, [224, 224])
+    x = tf.image.resize(image, [image_size, image_size])
     # 将图片的像素值缩放到[0,1]之间
     x = tf.cast(x, dtype=tf.float32) / 255.0
     # 归一化

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # @Date         : 2020-12-30
 # @Author       : AaronJny
-# @LastEditTime : 2021-03-06
+# @LastEditTime : 2021-03-13
 # @FilePath     : /LuWu/luwu/core/models/classifier/__init__.py
 # @Desc         :
 import os
@@ -14,6 +14,8 @@ from luwu.core.preprocess.image.load import (
     read_classify_dataset_from_dir,
     write_tfrecords_to_target_path,
 )
+from luwu.utils import file_util
+import numpy as np
 
 
 class LuwuImageClassifier:
@@ -26,6 +28,8 @@ class LuwuImageClassifier:
         batch_size: int = 32,
         epochs: int = 30,
         project_id: int = 0,
+        image_size: int = 224,
+        do_fine_tune=False,
         **kwargs,
     ):
         """
@@ -40,6 +44,11 @@ class LuwuImageClassifier:
         """
         self._call_code = ""
         self.project_id = project_id
+        self.do_fine_tune = do_fine_tune
+        origin_dataset_path = file_util.abspath(origin_dataset_path)
+        target_dataset_path = file_util.abspath(target_dataset_path)
+        model_save_path = file_util.abspath(model_save_path)
+        self.image_size = image_size
         self.origin_dataset_path = origin_dataset_path
         # 当未给定处理后数据集的路径时，默认保存到原始数据集相同路径
         if target_dataset_path:
@@ -48,18 +57,23 @@ class LuwuImageClassifier:
             self.target_dataset_path = origin_dataset_path
         # 当未给定模型保存路径时，默认保存到处理后数据集相同路径
         if self.project_id:
-            model_file_name = f"best_weights_project_{self.project_id}.h5"
+            self.project_save_name = f"luwu-classification-project-{self.project_id}"
         else:
-            model_file_name = "best_weights.h5"
+            self.project_save_name = f"luwu-classification-project"
         if model_save_path:
-            self.model_save_path = os.path.join(model_save_path, model_file_name)
-        else:
-            self.model_save_path = os.path.join(
-                self.target_dataset_path, model_file_name
+            self.project_save_path = os.path.join(
+                model_save_path, self.project_save_name
             )
+        else:
+            self.project_save_path = os.path.join(
+                self.target_dataset_path, self.project_save_name
+            )
+        self.model_save_path = os.path.join(self.project_save_path, "best_weights.h5")
         self.validation_split = validation_split
         self.batch_size = batch_size
         self.epochs = epochs
+        file_util.mkdirs(self.project_save_path)
+        file_util.mkdirs(self.target_dataset_path)
 
     def build_model(self) -> tf.keras.Model:
         """构建模型
@@ -81,19 +95,31 @@ class LuwuImageClassifier:
         self.classes_num_dict_rev = {
             value: key for key, value in self.classes_num_dict.items()
         }
-        # 切分数据
-        total = len(data)
-        dev_nums = int(total * self.validation_split)
-        dev_data = random.sample(data, dev_nums)
-        train_data = list(set(data) - set(dev_data))
-        del data
-        # 制作tfrecord数据集
+        # 先判断tfrecord是否存在
         self.target_train_dataset_path = os.path.join(
             self.target_dataset_path, "train_dataset"
         )
         self.target_dev_dataset_path = os.path.join(
             self.target_dataset_path, "dev_dataset"
         )
+        # if (
+        #     os.path.exists(self.target_train_dataset_path)
+        #     and os.path.exists(self.target_dev_dataset_path)
+        #     and os.path.isfile(self.target_train_dataset_path)
+        #     and os.path.isfile(self.target_dev_dataset_path)
+        # ):
+        #     logger.info("TFRecord数据集已存在。跳过！")
+        # else:
+        # 切分数据
+        total = len(data)
+        dev_nums = int(total * self.validation_split)
+        dev_data = random.sample(data, dev_nums)
+        train_data = list(set(data) - set(dev_data))
+        np.random.shuffle(train_data)
+        # np.random.shuffle(dev_data)
+        del data
+
+        # 制作tfrecord数据集
         write_tfrecords_to_target_path(
             train_data, len(classes_num_dict), self.target_train_dataset_path
         )
@@ -102,10 +128,14 @@ class LuwuImageClassifier:
         )
         # 读取tfrecord数据集
         self.train_dataset = ImageClassifierDataGnenrator(
-            self.target_train_dataset_path, batch_size=self.batch_size
+            self.target_train_dataset_path,
+            batch_size=self.batch_size,
+            do_fine_tune=self.do_fine_tune,
         )
         self.dev_dataset = ImageClassifierDataGnenrator(
-            self.target_dev_dataset_path, batch_size=self.batch_size, shuffle=False
+            self.target_dev_dataset_path,
+            batch_size=self.batch_size,
+            do_fine_tune=self.do_fine_tune,
         )
 
     def train(self):
@@ -157,6 +187,7 @@ class LuwuImageClassifier:
 
 
 from luwu.core.models.classifier.preset import (
+    LuwuLeNetImageClassifier,
     LuwuDenseNet121ImageClassifier,
     LuwuDenseNet169ImageClassifier,
     LuwuDenseNet201ImageClassifier,
@@ -190,6 +221,7 @@ from luwu.core.models.classifier.preset import (
 __all__ = [
     "LuwuImageClassifier",
     "LuwuPreTrainedImageClassifier",
+    "LuwuLeNetImageClassifier",
     "LuwuDenseNet121ImageClassifier",
     "LuwuDenseNet169ImageClassifier",
     "LuwuDenseNet201ImageClassifier",
