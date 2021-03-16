@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # @Author       : AaronJny
-# @LastEditTime : 2021-03-13
+# @LastEditTime : 2021-03-16
 # @FilePath     : /LuWu/luwu/scripts/scheduler.py
 # @Desc         :
 import multiprocessing
@@ -14,6 +14,7 @@ from luwu.scripts.utils import (
     read_train_projects,
     update_project_status,
 )
+from luwu.utils import file_util
 
 
 def run_project(project):
@@ -24,6 +25,7 @@ def run_project(project):
         f"luwu-classification-project-{project['id']}",
         f"train.log",
     )
+    file_util.mkdirs(os.path.dirname(log_path))
     curdir = os.path.abspath(os.path.dirname(__file__))
     cd_path = os.path.abspath(os.path.join(os.path.join(curdir, ".."), ".."))
     py_path = os.path.join("." + curdir[len(cd_path) :], "train_project.py")

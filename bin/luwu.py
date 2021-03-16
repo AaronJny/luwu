@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 # @Author       : AaronJny
-# @LastEditTime : 2021-03-11
+# @LastEditTime : 2021-03-16
 # @FilePath     : /LuWu/bin/luwu.py
 # @Desc         :
 import argparse
+import ast
 
 parser = argparse.ArgumentParser(
     description="""
@@ -52,7 +53,7 @@ parse_object_detection.add_argument(
     "--label_map_path", help="目标检测类别映射表(pbtxt)", type=str, default=""
 )
 parse_object_detection.add_argument(
-    "--do_fine_tune", help="是否在预训练模型的基础上进行微调", type=bool, default=True
+    "--do_fine_tune", help="是否在预训练模型的基础上进行微调", type=ast.literal_eval, default=True
 )
 parse_object_detection.add_argument(
     "--fine_tune_checkpoint_path", help="预训练权重路径", type=str, default=""
@@ -75,8 +76,20 @@ parse_object_detection.add_argument(
 parse_object_detection.add_argument(
     "--project_id", help="项目编号. Defaults to 0.", type=int, default=0
 )
+# todo: 目标检测的kaggle支持
+parse_object_detection.add_argument(
+    "--run_with_kaggle",
+    help="是否使用kaggle环境运行。必须先安装并配置kaggle api,才可以使用此选项。默认为False，即本地运行",
+    type=ast.literal_eval,
+    default=False,
+)
+parse_object_detection.add_argument(
+    "--kaggle_accelerator",
+    help="是否使用kaggle GPU进行加速（注意，仅当 run_with_kaggle 为 True 时此选项才有效）。默认不使用（即使用CPU）",
+    type=ast.literal_eval,
+    default=False,
+)
 
-# TODO:增加分类任务的命令行执行
 parse_classification = subparsers.add_parser("classification", help="通过命令行进行图像分类任务训练。")
 parse_classification.set_defaults(cmd="classification")
 parse_classification.add_argument(
@@ -100,7 +113,7 @@ parse_classification.add_argument(
     "--origin_dataset_path", help="处理前的数据集路径", type=str, default=""
 )
 parse_classification.add_argument(
-    "--target_dataset_path", help="处理后的tfrecord数据集路径", type=str, default=""
+    "--tfrecord_dataset_path", help="处理后的tfrecord数据集路径", type=str, default=""
 )
 parse_classification.add_argument(
     "--model_save_path", help="模型保存路径", type=str, default=""
@@ -120,6 +133,19 @@ parse_classification.add_argument(
 parse_classification.add_argument(
     "--project_id", help="项目编号. Defaults to 0.", type=int, default=0
 )
+parse_classification.add_argument(
+    "--run_with_kaggle",
+    help="是否使用kaggle环境运行。必须先安装并配置kaggle api,才可以使用此选项。默认为False，即本地运行",
+    type=bool,
+    default=False,
+)
+parse_classification.add_argument(
+    "--kaggle_accelerator",
+    help="是否使用kaggle GPU进行加速（注意，仅当 run_with_kaggle 为 True 时此选项才有效）。默认不使用（即使用CPU）",
+    type=bool,
+    default=False,
+)
+
 
 args = parser.parse_args()
 print(args)
@@ -133,19 +159,27 @@ def run():
     elif args.cmd == "detection":
         from luwu.core.models.image import LuWuTFModelsObjectDetector
 
-        LuWuTFModelsObjectDetector(**dict(args._get_kwargs())).run()
+        if args.run_with_kaggle:
+            from luwu.core.models.kaggle.kaggle import KaggleUtil
+
+            KaggleUtil(LuWuTFModelsObjectDetector, **dict(args._get_kwargs())).run()
+        else:
+            LuWuTFModelsObjectDetector(**dict(args._get_kwargs())).run()
     elif args.cmd == "classification":
         class_name = args.network_name
         net_name = class_name.lstrip("Luwu").rstrip("ImageClassifier")
         import importlib
 
         luwu_image = importlib.import_module("luwu.core.models.image")
-        # from luwu.core.models import image as luwu_image
-
         classifier_class = getattr(luwu_image, class_name)
         params = dict(args._get_kwargs())
         params["net_name"] = net_name
-        classifier_class(**params).run()
+        if args.run_with_kaggle:
+            from luwu.core.models.kaggle.kaggle import KaggleUtil
+
+            KaggleUtil(classifier_class, **params).run()
+        else:
+            classifier_class(**params).run()
     else:
         print("请检查指令是否有误！")
 

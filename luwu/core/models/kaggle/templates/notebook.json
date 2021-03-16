@@ -1,0 +1,37 @@
+{
+    "metadata": {
+        "language_info": {
+            "codemirror_mode": {
+                "name": "ipython",
+                "version": 3
+            },
+            "file_extension": ".py",
+            "mimetype": "text/x-python",
+            "name": "python",
+            "nbconvert_exporter": "python",
+            "pygments_lexer": "ipython3",
+            "version": "3.7.6-final"
+        },
+        "orig_nbformat": 2,
+        "kernelspec": {
+            "name": "python3",
+            "display_name": "Python",
+            "metadata": {
+                "interpreter": {
+                    "hash": "cc3cfac08d652da9f8579125156dc8f6d404e8cfc773b635ef2ae2ef6e6fd747"
+                }
+            }
+        }
+    },
+    "nbformat": 4,
+    "nbformat_minor": 2,
+    "cells": [
+        {
+            "cell_type": "code",
+            "execution_count": null,
+            "metadata": {},
+            "outputs": [],
+            "source": []
+        }
+    ]
+}

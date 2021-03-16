@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # @Author       : AaronJny
-# @LastEditTime : 2021-03-13
+# @LastEditTime : 2021-03-16
 # @FilePath     : /LuWu/luwu/backend/v1.py
 # @Desc         :
 import json
@@ -106,7 +106,7 @@ def create_image_classify_project():
     train_project.params = {
         "dataset_index": dataset_index,
         "origin_dataset_path": origin_dataset_path,
-        "target_dataset_path": target_dataset_path,
+        "tfrecord_dataset_path": target_dataset_path,
         "model_save_path": model_save_path,
         "batch_size": batch_size,
         "epochs": epochs,

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # @Date         : 2021-01-21
 # @Author       : AaronJny
-# @LastEditTime : 2021-03-15
+# @LastEditTime : 2021-03-16
 # @FilePath     : /LuWu/luwu/core/models/classifier/preset/pre_trained.py
 # @Desc         : 封装tf.keras里设置的预训练模型，并对外提供支持
 import os
@@ -115,12 +115,15 @@ class LuwuPreTrainedImageClassifier(LuwuImageClassifier):
 
 
 class LuwuLeNetImageClassifier(LuwuPreTrainedImageClassifier):
-    def __init__(self, *args, image_size=32, **kwargs):
+    def __init__(self, *args, **kwargs):
         kwargs["net_name"] = "LeNet"
+        kwargs["with_image_net"] = False
+        kwargs["do_fine_tune"] = False
+        kwargs["image_size"] = 32
         super(LuwuLeNetImageClassifier, self).__init__(*args, **kwargs)
-        self.image_size = image_size
 
     def build_model(self):
+        # todo: 为模型增加dropout和正则，以适当减轻过拟合
         model = tf.keras.Sequential(
             [
                 tf.keras.layers.Conv2D(6, (5, 5), padding="same"),
@@ -145,16 +148,16 @@ class LuwuLeNetImageClassifier(LuwuPreTrainedImageClassifier):
                 tf.keras.layers.Dense(84),
                 tf.keras.layers.BatchNormalization(),
                 tf.keras.layers.ReLU(),
-                tf.keras.layers.Dropout(0.3),
+                # tf.keras.layers.Dropout(0.3),
                 # 输出层，使用softmax激活
                 tf.keras.layers.Dense(len(self.classes_num_dict), activation="softmax"),
             ]
         )
-        use_regularizer = True
-        if use_regularizer:
-            for layer in model.layers:
-                if hasattr(layer, "kernel_regularizer"):
-                    layer.kernel_regularizer = tf.keras.regularizers.l2(0.01)
+        # use_regularizer = True
+        # if use_regularizer:
+        #     for layer in model.layers:
+        #         if hasattr(layer, "kernel_regularizer"):
+        #             layer.kernel_regularizer = tf.keras.regularizers.l2(0.01)
         model.compile(
             optimizer=tf.keras.optimizers.Adam(),
             loss=tf.keras.losses.categorical_crossentropy,

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # @Date         : 2021-01-20
 # @Author       : AaronJny
-# @LastEditTime : 2021-03-13
+# @LastEditTime : 2021-03-16
 # @FilePath     : /LuWu/luwu/core/preprocess/data/data_generator.py
 # @Desc         :
 import os
@@ -17,13 +17,18 @@ from luwu.core.preprocess.image.process import (
 
 class BaseDataGenerator(object):
     def __init__(
-        self, data_path, batch_size=32, image_size=224, shuffle=False, do_fine_tune=True
+        self,
+        data_path,
+        batch_size=32,
+        image_size=224,
+        shuffle=False,
+        with_image_net=True,
     ):
         self.data_path = data_path
         self.batch_size = batch_size
         self.image_size = image_size
         self.shuffle = shuffle
-        self.do_fine_tune = do_fine_tune
+        self.with_image_net = with_image_net
         self._steps = -1
         self.dataset = self.load_dataset()
 
@@ -54,7 +59,7 @@ class ImageClassifierDataGnenrator(BaseDataGenerator):
             lambda x, y: (x, y, self.image_size),
             num_parallel_calls=tf.data.experimental.AUTOTUNE,
         )
-        if self.do_fine_tune:
+        if self.with_image_net:
             dataset = dataset.map(
                 normalized_image_with_imagenet,
                 num_parallel_calls=tf.data.experimental.AUTOTUNE,
@@ -85,4 +90,6 @@ class ImageClassifierDataGnenrator(BaseDataGenerator):
         with open(template_path, "r") as f:
             text = f.read()
         template = Template(text)
-        return template.render(image_size=self.image_size)
+        return template.render(
+            image_size=self.image_size, with_image_net=self.with_image_net
+        )
