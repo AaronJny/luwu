@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # @Author       : AaronJny
-# @LastEditTime : 2021-03-09
+# @LastEditTime : 2021-03-16
 # @FilePath     : /LuWu/luwu/core/models/complex/od/models.py
 # @Desc         :
 import os
@@ -339,6 +339,9 @@ class LuWuTFModelsObjectDetector(LuWuObjectDetector):
         label_map_dict = label_map_util.get_label_map_dict(self.label_map_file_path)
         num_classes = len(label_map_dict)
         # TODO: 优化初始步数生成规则，不再使用默认值
+        warmup_steps = max(10, int(self.steps * 0.01))
+        warmup_steps = min(warmup_steps, 3000)
+        warmup_steps = min(warmup_steps, self.steps)
         if self.fine_tune_model_name in (
             "SSD ResNet50 V1 FPN 640x640 (RetinaNet50)",
             "EfficientDet D0 512x512",
@@ -352,6 +355,7 @@ class LuWuTFModelsObjectDetector(LuWuObjectDetector):
             params["label_map_path"] = self.label_map_file_path
             params["train_input_path"] = self.tfrecord_dataset_file_path
             params["eval_input_path"] = self.tfrecord_dataset_file_path
+            params["warmup_steps"] = warmup_steps
         else:
             raise Exception(
                 f"暂不支持的 object detection model! {self.fine_tune_model_name}"

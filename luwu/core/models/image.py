@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 # @Author       : AaronJny
-# @LastEditTime : 2021-03-09
+# @LastEditTime : 2021-03-12
 # @FilePath     : /LuWu/luwu/core/models/image.py
 # @Desc         : 图像处理相关模型
 from luwu.core.models.classifier import (
+    LuwuLeNetImageClassifier,
     LuwuDenseNet121ImageClassifier,
     LuwuDenseNet169ImageClassifier,
     LuwuDenseNet201ImageClassifier,
@@ -36,6 +37,7 @@ from luwu.core.models.classifier import (
 from luwu.core.models.complex.od.models import LuWuTFModelsObjectDetector
 
 pre_trained_classifiers = [
+    LuwuLeNetImageClassifier,
     LuwuDenseNet121ImageClassifier,
     LuwuDenseNet169ImageClassifier,
     LuwuDenseNet201ImageClassifier,
@@ -70,6 +72,7 @@ tf_models_detectors = [
 ]
 
 __all__ = [
+    "LuwuLeNetImageClassifier",
     "LuwuDenseNet121ImageClassifier",
     "LuwuDenseNet169ImageClassifier",
     "LuwuDenseNet201ImageClassifier",

@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Date         : 2021-01-20
 # @Author       : AaronJny
-# @LastEditTime : 2021-01-28
-# @FilePath     : /app/luwu/core/preprocess/data/data_generator.py
+# @LastEditTime : 2021-03-16
+# @FilePath     : /LuWu/luwu/core/preprocess/data/data_generator.py
 # @Desc         :
 import os
 
@@ -16,10 +16,19 @@ from luwu.core.preprocess.image.process import (
 
 
 class BaseDataGenerator(object):
-    def __init__(self, data_path, batch_size=32, shuffle=True):
+    def __init__(
+        self,
+        data_path,
+        batch_size=32,
+        image_size=224,
+        shuffle=False,
+        with_image_net=True,
+    ):
         self.data_path = data_path
         self.batch_size = batch_size
+        self.image_size = image_size
         self.shuffle = shuffle
+        self.with_image_net = with_image_net
         self._steps = -1
         self.dataset = self.load_dataset()
 
@@ -39,13 +48,32 @@ class BaseDataGenerator(object):
 
 class ImageClassifierDataGnenrator(BaseDataGenerator):
     def load_dataset(self):
-        dataset = tf.data.TFRecordDataset(self.data_path)
-        dataset = dataset.map(extract_image_and_label_from_record)
-        dataset = dataset.map(normalized_image_with_imagenet)
+        dataset = tf.data.TFRecordDataset(
+            self.data_path, num_parallel_reads=tf.data.experimental.AUTOTUNE
+        )
+        dataset = dataset.map(
+            extract_image_and_label_from_record,
+            num_parallel_calls=tf.data.experimental.AUTOTUNE,
+        )
+        dataset = dataset.map(
+            lambda x, y: (x, y, self.image_size),
+            num_parallel_calls=tf.data.experimental.AUTOTUNE,
+        )
+        if self.with_image_net:
+            dataset = dataset.map(
+                normalized_image_with_imagenet,
+                num_parallel_calls=tf.data.experimental.AUTOTUNE,
+            )
+        else:
+            dataset = dataset.map(
+                normalized_image, num_parallel_calls=tf.data.experimental.AUTOTUNE
+            )
         # todo:增加图像增广相关功能
         if self.shuffle:
             dataset = dataset.shuffle(10000)
-        dataset = dataset.prefetch(self.batch_size).batch(self.batch_size)
+        dataset = dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE).batch(
+            self.batch_size
+        )
         # 计算总步数
         cnt = 0
         for _ in dataset:
@@ -62,4 +90,6 @@ class ImageClassifierDataGnenrator(BaseDataGenerator):
         with open(template_path, "r") as f:
             text = f.read()
         template = Template(text)
-        return template.render()
+        return template.render(
+            image_size=self.image_size, with_image_net=self.with_image_net
+        )

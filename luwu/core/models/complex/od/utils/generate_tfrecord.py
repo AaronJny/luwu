@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # @Author       : AaronJny
-# @LastEditTime : 2021-03-08
+# @LastEditTime : 2021-03-10
 # @FilePath     : /LuWu/luwu/core/models/complex/od/utils/generate_tfrecord.py
 # @Desc         : 文件修改自 [https://tensorflow-object-detection-api-tutorial.readthedocs.io/en/latest/training.html](https://tensorflow-object-detection-api-tutorial.readthedocs.io/en/latest/training.html)
 import argparse
@@ -79,7 +79,7 @@ def xml_to_csv(path):
         root = tree.getroot()
         for member in root.findall("object"):
             value = (
-                root.find("filename").text.replace("png", "jpg"),
+                os.path.split(root.find("filename").text)[-1],
                 int(root.find("size")[0].text),
                 int(root.find("size")[1].text),
                 member[0].text,
@@ -121,6 +121,12 @@ def create_tf_example(group, path):
         encoded_jpg = fid.read()
     encoded_jpg_io = io.BytesIO(encoded_jpg)
     image = Image.open(encoded_jpg_io)
+    if image.mode != "RGB":
+        rgb_image = image.convert("RGB")
+        rgb_encode_jpg_io = io.BytesIO()
+        rgb_image.save(rgb_encode_jpg_io, format="JPEG")
+        encoded_jpg = rgb_encode_jpg_io.getvalue()
+
     width, height = image.size
 
     filename = group.filename.encode("utf8")

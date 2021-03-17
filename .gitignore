@@ -160,3 +160,4 @@ addons/*
 build/*
 dist/*
 luwu.egg-info/*
+.VSCodeCounter/*
