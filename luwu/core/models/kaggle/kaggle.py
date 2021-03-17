@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # @Author       : AaronJny
-# @LastEditTime : 2021-03-16
+# @LastEditTime : 2021-03-17
 # @FilePath     : /LuWu/luwu/core/models/kaggle/kaggle.py
 # @Desc         :
 import os
@@ -92,131 +92,6 @@ class KaggleUtil:
                 f"指定的 origin_dataset_path 不存在！{origin_dataset_path}"
             )
 
-    def image_classification_train(self):
-        # 生成训练代码
-        # 创建文件夹
-        kernel_path = os.path.join(self.tmp_dir_path, "kaggle-kernel")
-        logger.info(f"创建文件夹 {kernel_path} ...")
-        file_util.mkdirs(kernel_path)
-        # 初始化kernel
-        logger.info("使用 kaggle api 初始化 kernel ...")
-        cmd = f"kaggle kernels init -p {kernel_path}"
-        cmd_util.run_cmd(cmd)
-        override_params = {"project_id", "cmd", "net_name", "network_name"}
-        train_cmd_params = []
-        # 生成训练脚本
-        # 原始数据集路径
-        origin_dataset_path = os.path.join("../input", self.dataset_title)
-        train_cmd_params.append(f"--origin_dataset_path {origin_dataset_path}")
-        override_params.add("origin_dataset_path")
-        # tfrecord数据集路径
-        target_dataset_path = "./dataset"
-        train_cmd_params.append(f"--target_dataset_path {target_dataset_path}")
-        override_params.add("target_dataset_path")
-        # 模型保存路径
-        model_save_path = "./project"
-        train_cmd_params.append(f"--model_save_path {model_save_path}")
-        override_params.add("model_save_path")
-        # 其他参数
-        for arg_name, arg_value in self.kwargs.items():
-            if "kaggle" in arg_name:
-                continue
-            if arg_name in override_params:
-                continue
-            # 兼容bool类型参数
-            if arg_value != False:
-                train_cmd_params.append(f'--{arg_name} "{arg_value}"')
-            # else:
-            #     train_cmd_params.append(f"--{arg_name}")
-        train_cmd = f"!luwu classification {' '.join(train_cmd_params)} {self.luwu_model_class.__name__}\n"
-        project_path = os.path.join(model_save_path, "luwu-classification-project")
-        zip_cmd = (
-            f"!mv {project_path} ./ "
-            f"&& zip -r luwu-classification-project-{self.uuid}.zip ./luwu-classification-project "
-            f"&& rm -rf {target_dataset_path} "
-            f"&& rm -rf ./luwu-classification-project "
-            f"&& rm -rf {model_save_path} \n"
-        )
-        codes = [
-            "# 安装 luwu\n",
-            "!pip install luwu\n",
-            "# 执行训练指令\n",
-            train_cmd,
-            "# 打包待下载文件的指令\n",
-            zip_cmd,
-            "    ",
-        ]
-        script_metadata = self.load_notebook_metadata()
-        self.update_notebook_codes(script_metadata, codes)
-        kernel_file_path = os.path.join(kernel_path, f"luwu-kernel-{self.uuid}.ipynb")
-        with open(kernel_file_path, "w") as f:
-            json.dump(script_metadata, f, ensure_ascii=False, indent=2)
-        # 修改 kernel-metadata.json
-        kernel_metadata_path = os.path.join(kernel_path, "kernel-metadata.json")
-        with open(kernel_metadata_path, "r") as f:
-            kernel_metadata = json.load(f)
-        kernel_metadata["id"] = (
-            kernel_metadata["id"].split("/")[0] + "/" + f"luwu-kernel-{self.uuid}"
-        )
-        kernel_metadata["title"] = f"luwu-kernel-{self.uuid}"
-        kernel_metadata["code_file"] = kernel_file_path
-        kernel_metadata["language"] = "python"
-        kernel_metadata["kernel_type"] = "notebook"
-        kaggle_accelerator = self.kwargs.get("kaggle_accelerator", False)
-        if kaggle_accelerator:
-            kernel_metadata["enable_gpu"] = "true"
-        else:
-            kernel_metadata["enable_gpu"] = "false"
-        kernel_metadata["dataset_sources"] = [
-            self.dataset_id,
-        ]
-        with open(kernel_metadata_path, "w") as f:
-            json.dump(kernel_metadata, f, ensure_ascii=False, indent=2)
-        logger.info(f"kernel metadata :{kernel_metadata}")
-        self.kernel_id = kernel_metadata["id"]
-        self.kernel_title = kernel_metadata["title"]
-        # 推送并运行kernel
-        logger.info("将 kernel 推送到 Kaggle 并运行 ...")
-        cmd = f"kaggle kernels push -p {kernel_path}"
-        logger.debug(cmd)
-        cmd_util.run_cmd(cmd)
-        logger.info("推送完成！等待运行中 ...")
-        running = False
-        error_cnt = 0
-        while True:
-            cmd = f"kaggle kernels status {self.kernel_id}"
-            code, output = subprocess.getstatusoutput(cmd)
-            if code != 0:
-                logger.error(output)
-                raise Exception(output)
-            pattern = 'has status "([^"]*)"'
-            matches = re.findall(pattern, output)
-            if not matches:
-                logger.error(f"未查询到状态！{output}")
-                error_cnt += 1
-                if error_cnt > 10:
-                    raise Exception(f"连续10次未获取到 kernel {self.kernel_id} 的运行状态！")
-            else:
-                status = matches[0]
-                # 运行之前，所有的状态都忽略
-                if not running:
-                    if status == "running":
-                        logger.info(f"{self.dataset_id} running ...")
-                        running = True
-                else:
-                    # 运行之后，找到第一次非 running 状态就退出
-                    if status == "running":
-                        logger.info(f"{self.dataset_id} running ...")
-                    else:
-                        self.kernel_exit_status = status
-                        logger.info(output)
-                        logger.info(
-                            f"{self.dataset_id} 终止状态：{self.kernel_exit_status} . 已退出！"
-                        )
-                        break
-                time.sleep(10)
-        logger.info("kernel 运行已结束！")
-
     def train_on_kaggle(self, task_type):
         # 生成训练代码
         # 创建文件夹
@@ -279,13 +154,26 @@ class KaggleUtil:
         else:
             raise Exception(f"不支持的任务类型! {task_type}")
         project_path = os.path.join(model_save_path, project_name)
-        zip_cmd = (
-            f"!mv {project_path} ./ "
-            f"&& zip -r {project_name}-{self.uuid}.zip ./{project_name} "
-            f"&& rm -rf {tfrecord_dataset_path} "
-            f"&& rm -rf ./{project_name} "
-            f"&& rm -rf {model_save_path} \n"
-        )
+        if task_type == "classification":
+            zip_cmd = (
+                f"!mv {project_path} ./ "
+                f"&& zip -r {project_name}-{self.uuid}.zip ./{project_name} "
+                f"&& rm -rf {tfrecord_dataset_path} "
+                f"&& rm -rf ./{project_name} "
+                f"&& rm -rf {model_save_path} \n"
+            )
+        elif task_type == "detection":
+            zip_cmd = (
+                f"!mv {project_path} ./ "
+                f'&& rm -rf {os.path.join(project_name,"train_models")} '
+                f"&& zip -r {project_name}-{self.uuid}.zip ./{project_name} "
+                f"&& rm -rf {tfrecord_dataset_path} "
+                f"&& rm -rf ./{project_name} "
+                f"&& rm -rf {model_save_path} \n"
+            )
+            logger.info(project_path)
+            logger.info(project_name)
+            logger.info(zip_cmd)
         codes = [
             "# 安装 luwu\n",
             "!pip install luwu\n",

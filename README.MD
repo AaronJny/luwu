@@ -1,6 +1,6 @@
 <!--
  * @Author       : AaronJny
- * @LastEditTime : 2021-03-10
+ * @LastEditTime : 2021-03-17
  * @FilePath     : /LuWu/README.MD
  * @Desc         : 
 -->
@@ -12,7 +12,7 @@
 
 <p>
   <img alt="Python Version" src="https://img.shields.io/badge/Python-3.7-blue"></img>
-  <img alt="Version" src="https://img.shields.io/badge/version-0.1.2-blue.svg?cacheSeconds=2592000" />
+  <img alt="Version" src="https://img.shields.io/badge/version-0.27-blue.svg?cacheSeconds=2592000" />
   <a href="https://github.com/AaronJny/luwu" target="_blank">
     <img alt="Documentation" src="https://img.shields.io/badge/documentation-yes-brightgreen.svg" />
   </a>
