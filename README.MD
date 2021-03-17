@@ -104,6 +104,16 @@
     - [ ] EarlyStopping
     - [ ] 迁移学习解冻特征抽取器做二次 Fine turn
     - [ ] 自动样本均衡
+  - [x] 命令行工具
+    - [x] 图像分类任务的命令行支持
+    - [x] 目标检测任务的命令行支持
+  - [x] 使用 Kaggle 运行（对于没有靠谱的计算设备的小伙伴，可以使用此功能白嫖Kaggle的GPU进行训练）
+
+
+**注意**：
+> 暂时搁置 Web 页面上相关的功能开发，主要精力投入到命令行工具开发和模型功能开发上。
+> 
+> 因为，我忽然发现，直接使用命令行工具貌似比使用 Web 服务更方便 ...
 
 ### ✨ [Demo](https://github.com/AaronJny/luwu)
 
@@ -111,13 +121,32 @@
 
 当前支持三种运行方式，使用 `pip` 、 `Docker` 或 `Clone` 项目代码。
 
-### Clone 项目代码
-
 **建议使用Anaconda管理Python环境**。
 
 如果没有安装Anaconda，可以先自行安装。下载链接：[https://www.anaconda.com/products/individual#Downloads](https://www.anaconda.com/products/individual#Downloads)
 
-使用Anaconda配置环境并启动项目：
+### 使用 `pip` 安装
+
+使用 Anaconda :
+
+```sh
+conda create -n luwu python=3.7
+conda activate luwu
+pip install luwu
+luwu -h
+```
+
+不使用 Anaconda :
+
+```sh
+pip3 install luwu
+luwu -h
+```
+
+### Clone 项目代码
+
+
+使用 Anaconda：
 
 ```sh
 conda create -n luwu python=3.7
@@ -128,20 +157,12 @@ python setup.py install
 luwu -h
 ```
 
-使用非Anaconda版本的Python启动项目：
+不使用 Anaconda：
 
 ```sh
 git clone https://github.com/AaronJny/luwu.git
 cd luwu
-python setup.py install
-luwu -h
-```
-
-
-### 使用 `pip` 安装
-
-```sh
-pip install luwu
+python3 setup.py install
 luwu -h
 ```
 
@@ -157,7 +178,7 @@ luwu -h
 # 拉取最新镜像
 docker pull aaronjny/luwu:latest
 # 运行容器
-docker run --name luwu -p 7788:7788 -v /home/xxx/data:/data aaronjny/luwu:latest
+docker run --name luwu -p 7788:7788 -v /home/xxx/data:/data aaronjny/luwu
 ```
 
 使用 `GPU` :
@@ -302,6 +323,7 @@ docker run --name luwu --gpus all -p 7788:7788 -v /home/xxx/data:/data aaronjny/
 > 当前陆吾的命令行工具仅支持如下功能：
 > - 启动 Web 服务
 > - 执行目标检测任务
+> - 执行图像分类任务
 > 
 > 其他功能正在适配中...
 
@@ -354,6 +376,8 @@ usage: luwu detection [-h] [--origin_dataset_path ORIGIN_DATASET_PATH]
                       [--model_save_path MODEL_SAVE_PATH]
                       [--batch_size BATCH_SIZE] [--steps STEPS]
                       [--project_id PROJECT_ID]
+                      [--run_with_kaggle RUN_WITH_KAGGLE]
+                      [--kaggle_accelerator KAGGLE_ACCELERATOR]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -379,8 +403,77 @@ optional arguments:
   --steps STEPS         训练steps数量. Defaults to 2000.
   --project_id PROJECT_ID
                         项目编号. Defaults to 0.
+  --run_with_kaggle RUN_WITH_KAGGLE
+                        是否使用kaggle环境运行。必须先安装并配置kaggle
+                        api,才可以使用此选项。默认为False，即本地运行
+  --kaggle_accelerator KAGGLE_ACCELERATOR
+                        是否使用kaggle GPU进行加速（注意，仅当 run_with_kaggle 为 True
+                        时此选项才有效）。默认不使用（即使用CPU）
 ```
 
+训练一个图像分类任务：
+
+```sh
+luwu classification -h
+```
+
+output:
+
+```
+usage: luwu classification [-h] [--origin_dataset_path ORIGIN_DATASET_PATH]
+                           [--tfrecord_dataset_path TFRECORD_DATASET_PATH]
+                           [--model_save_path MODEL_SAVE_PATH]
+                           [--validation_split VALIDATION_SPLIT]
+                           [--do_fine_tune DO_FINE_TUNE]
+                           [--batch_size BATCH_SIZE] [--epochs EPOCHS]
+                           [--project_id PROJECT_ID]
+                           [--run_with_kaggle RUN_WITH_KAGGLE]
+                           [--kaggle_accelerator KAGGLE_ACCELERATOR]
+                           network_name
+
+positional arguments:
+  network_name          分类器名称，支持的分类器有：[LuwuDenseNet121ImageClassifier, LuwuDen
+                        seNet169ImageClassifier,LuwuDenseNet201ImageClassifier
+                        , LuwuVGG16ImageClassifier,LuwuVGG19ImageClassifier,Lu
+                        wuMobileNetImageClassifier, LuwuMobileNetV2ImageClassi
+                        fier,LuwuInceptionResNetV2ImageClassifier, LuwuIncepti
+                        onV3ImageClassifier,LuwuNASNetMobileImageClassifier, L
+                        uwuNASNetLargeImageClassifier,LuwuResNet50ImageClassif
+                        ier, LuwuResNet50V2ImageClassifier,LuwuResNet101ImageC
+                        lassifier, LuwuResNet101V2ImageClassifier,LuwuResNet15
+                        2ImageClassifier, LuwuResNet152V2ImageClassifier,LuwuM
+                        obileNetV3SmallImageClassifier, LuwuMobileNetV3LargeIm
+                        ageClassifier,LuwuXceptionImageClassifier, LuwuEfficie
+                        ntNetB0ImageClassifier,LuwuEfficientNetB1ImageClassifi
+                        er, LuwuEfficientNetB2ImageClassifier,LuwuEfficientNet
+                        B3ImageClassifier, LuwuEfficientNetB4ImageClassifier,L
+                        uwuEfficientNetB5ImageClassifier, LuwuEfficientNetB6Im
+                        ageClassifier,LuwuEfficientNetB7ImageClassifier]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --origin_dataset_path ORIGIN_DATASET_PATH
+                        处理前的数据集路径
+  --tfrecord_dataset_path TFRECORD_DATASET_PATH
+                        处理后的tfrecord数据集路径
+  --model_save_path MODEL_SAVE_PATH
+                        模型保存路径
+  --validation_split VALIDATION_SPLIT
+                        验证集切割比例。默认 0.2
+  --do_fine_tune DO_FINE_TUNE
+                        是进行fine tune，还是重新训练。默认 False
+  --batch_size BATCH_SIZE
+                        mini batch 大小。默认 32.
+  --epochs EPOCHS       训练epoch数。默认 30.
+  --project_id PROJECT_ID
+                        项目编号. Defaults to 0.
+  --run_with_kaggle RUN_WITH_KAGGLE
+                        是否使用kaggle环境运行。必须先安装并配置kaggle
+                        api,才可以使用此选项。默认为False，即本地运行
+  --kaggle_accelerator KAGGLE_ACCELERATOR
+                        是否使用kaggle GPU进行加速（注意，仅当 run_with_kaggle 为 True
+                        时此选项才有效）。默认不使用（即使用CPU）
+```
 
 ## Code Contributors
 

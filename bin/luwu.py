@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # @Author       : AaronJny
-# @LastEditTime : 2021-03-16
+# @LastEditTime : 2021-03-17
 # @FilePath     : /LuWu/bin/luwu.py
 # @Desc         :
 import argparse
@@ -76,7 +76,6 @@ parse_object_detection.add_argument(
 parse_object_detection.add_argument(
     "--project_id", help="项目编号. Defaults to 0.", type=int, default=0
 )
-# todo: 目标检测的kaggle支持
 parse_object_detection.add_argument(
     "--run_with_kaggle",
     help="是否使用kaggle环境运行。必须先安装并配置kaggle api,才可以使用此选项。默认为False，即本地运行",
