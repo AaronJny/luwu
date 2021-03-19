@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # @Date         : 2021-01-21
 # @Author       : AaronJny
-# @LastEditTime : 2021-03-16
+# @LastEditTime : 2021-03-18
 # @FilePath     : /LuWu/luwu/core/models/classifier/preset/pre_trained.py
 # @Desc         : 封装tf.keras里设置的预训练模型，并对外提供支持
 import os
@@ -9,6 +9,7 @@ import os
 import tensorflow as tf
 from jinja2 import Template
 from luwu.core.models.classifier import LuwuImageClassifier
+from loguru import logger
 
 
 class LuwuPreTrainedImageClassifier(LuwuImageClassifier):
@@ -57,8 +58,13 @@ class LuwuPreTrainedImageClassifier(LuwuImageClassifier):
         else:
             pre_train_epochs = 0
         train_epochs = self.epochs - pre_train_epochs
+        if pre_train_epochs:
+            logger.info(
+                f"分两步训练，冻结训练{pre_train_epochs}个epochs，解冻训练{train_epochs}个epochs..."
+            )
         # 训练
         if pre_train_epochs:
+            logger.info("冻结 pre-trained 模型，开始预训练 ...")
             self.model.fit(
                 self.train_dataset.for_fit(),
                 initial_epoch=0,
@@ -71,6 +77,7 @@ class LuwuPreTrainedImageClassifier(LuwuImageClassifier):
                 ],
             )
         if train_epochs:
+            logger.info("解冻 pre-trained 模型，继续训练 ...")
             self.pre_trained_net.trainable = True
             self.model.fit(
                 self.train_dataset.for_fit(),
@@ -83,6 +90,9 @@ class LuwuPreTrainedImageClassifier(LuwuImageClassifier):
                     checkpoint,
                 ],
             )
+        logger.info("加载最优参数，输出验证集结果 ...")
+        self.model.load_weights(self.model_save_path)
+        self.model.evaluate(self.dev_dataset.for_fit(), steps=self.dev_dataset.steps)
 
     def get_call_code(self):
         """返回模型定义和模型调用的代码"""
@@ -181,6 +191,9 @@ class LuwuLeNetImageClassifier(LuwuPreTrainedImageClassifier):
                 checkpoint,
             ],
         )
+        logger.info("加载最优参数，输出验证集结果 ...")
+        self.model.load_weights(self.model_save_path)
+        self.model.evaluate(self.dev_dataset.for_fit(), steps=self.dev_dataset.steps)
 
 
 class LuwuDenseNet121ImageClassifier(LuwuPreTrainedImageClassifier):

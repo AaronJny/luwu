@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # @Author       : AaronJny
-# @LastEditTime : 2021-03-17
+# @LastEditTime : 2021-03-20
 # @FilePath     : /LuWu/luwu/core/models/kaggle/kaggle.py
 # @Desc         :
 import os
@@ -111,10 +111,6 @@ class KaggleUtil:
         if task_type == "classification":
             project_name = "luwu-classification-project"
             override_params.update(["net_name", "network_name"])
-            # tfrecord数据集路径
-            tfrecord_dataset_path = "./dataset"
-            train_cmd_params.append(f"--target_dataset_path {tfrecord_dataset_path}")
-            override_params.add("target_dataset_path")
         elif task_type == "detection":
             project_name = "luwu-object-detection-project"
             override_params.update(
@@ -123,11 +119,12 @@ class KaggleUtil:
                     "fine_tune_checkpoint_path",
                 ]
             )
-            tfrecord_dataset_path = "./dataset"
-            train_cmd_params.append(f"--tfrecord_dataset_path {tfrecord_dataset_path}")
-            override_params.add("tfrecord_dataset_path")
         else:
             raise Exception(f"不支持的任务类型! {task_type}")
+        # tfrecord数据集路径
+        tfrecord_dataset_path = "./dataset"
+        train_cmd_params.append(f"--tfrecord_dataset_path {tfrecord_dataset_path}")
+        override_params.add("tfrecord_dataset_path")
         # 原始数据集路径
         origin_dataset_path = os.path.join("../input", self.dataset_title)
         train_cmd_params.append(f"--origin_dataset_path {origin_dataset_path}")
