@@ -1,6 +1,6 @@
 <!--
  * @Author       : AaronJny
- * @LastEditTime : 2021-03-17
+ * @LastEditTime : 2021-03-18
  * @FilePath     : /LuWu/README.MD
  * @Desc         : 
 -->
@@ -104,10 +104,11 @@
     - [ ] EarlyStopping
     - [ ] 迁移学习解冻特征抽取器做二次 Fine turn
     - [ ] 自动样本均衡
+    - [ ] 增加简单的过拟合调节参数
   - [x] 命令行工具
     - [x] 图像分类任务的命令行支持
     - [x] 目标检测任务的命令行支持
-  - [x] 使用 Kaggle 运行（对于没有靠谱的计算设备的小伙伴，可以使用此功能白嫖Kaggle的GPU进行训练~感谢Kaggle,美滋滋~）
+  - [x] 使用 Kaggle 运行（对于没有靠谱的计算设备的小伙伴，可以使用此功能白嫖Kaggle的GPU进行训练~ 感谢Kaggle,美滋滋~）
 
 
 **注意**：
@@ -324,8 +325,6 @@ docker run --name luwu --gpus all -p 7788:7788 -v /home/xxx/data:/data aaronjny/
 > - 启动 Web 服务
 > - 执行目标检测任务
 > - 执行图像分类任务
-> 
-> 其他功能正在适配中...
 
 查看陆吾支持的功能:
 
