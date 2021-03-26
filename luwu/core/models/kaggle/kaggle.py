@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # @Author       : AaronJny
-# @LastEditTime : 2021-03-20
+# @LastEditTime : 2021-03-21
 # @FilePath     : /LuWu/luwu/core/models/kaggle/kaggle.py
 # @Desc         :
 import os
@@ -25,6 +25,12 @@ class KaggleUtil:
         self.kwargs = kwargs
         self.uuid = str(uuid1())
         self.tmp_dir_path = file_util.get_tmp_dir(dir_name=self.uuid)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.clean_tmp_files()
 
     def load_notebook_metadata(self):
         file_path = os.path.join(

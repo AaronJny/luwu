@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # @Date         : 2021-01-20
 # @Author       : AaronJny
-# @LastEditTime : 2021-03-16
+# @LastEditTime : 2021-03-20
 # @FilePath     : /LuWu/luwu/core/preprocess/data/data_generator.py
 # @Desc         :
 import os
@@ -36,7 +36,8 @@ class BaseDataGenerator(object):
         raise NotImplementedError
 
     def for_fit(self):
-        yield from self.dataset
+        # yield from self.dataset
+        return self.dataset
 
     @property
     def steps(self):

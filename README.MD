@@ -1,6 +1,6 @@
 <!--
  * @Author       : AaronJny
- * @LastEditTime : 2021-03-18
+ * @LastEditTime : 2021-03-26
  * @FilePath     : /LuWu/README.MD
  * @Desc         : 
 -->
@@ -12,7 +12,7 @@
 
 <p>
   <img alt="Python Version" src="https://img.shields.io/badge/Python-3.7-blue"></img>
-  <img alt="Version" src="https://img.shields.io/badge/version-0.27-blue.svg?cacheSeconds=2592000" />
+  <img alt="Version" src="https://img.shields.io/badge/version-0.29-blue.svg?cacheSeconds=2592000" />
   <a href="https://github.com/AaronJny/luwu" target="_blank">
     <img alt="Documentation" src="https://img.shields.io/badge/documentation-yes-brightgreen.svg" />
   </a>
@@ -117,6 +117,13 @@
 > 因为，我忽然发现，直接使用命令行工具貌似比使用 Web 服务更方便 ...
 
 ### ✨ [Demo](https://github.com/AaronJny/luwu)
+
+- [一、[基本使用]安装Luwu](docs/一、[基本使用]安装Luwu.md)
+- [二、[基本使用]了解Luwu的命令行模式](docs/二、[基本使用]了解Luwu的命令行模式.md)
+- [三、[图像分类]训练一个图像分类器](docs/三、[图像分类]训练一个图像分类器.md)
+- [四、[目标检测]使用LabelImg标注数据集](docs/四、[目标检测]使用LabelImg标注数据集.md)
+- [五、[目标检测]训练一个目标检测模型](docs/五、[目标检测]训练一个目标检测模型.md)
+- [六、[进阶用法]使用Kaggle加速训练](docs/六、[进阶用法]使用Kaggle加速训练.md)
 
 ## 运行项目
 
