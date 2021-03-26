@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # @Date         : 2021-01-21
 # @Author       : AaronJny
-# @LastEditTime : 2021-03-18
+# @LastEditTime : 2021-03-21
 # @FilePath     : /LuWu/luwu/core/models/classifier/preset/pre_trained.py
 # @Desc         : 封装tf.keras里设置的预训练模型，并对外提供支持
 import os
@@ -91,7 +91,7 @@ class LuwuPreTrainedImageClassifier(LuwuImageClassifier):
                 ],
             )
         logger.info("加载最优参数，输出验证集结果 ...")
-        self.model.load_weights(self.model_save_path)
+        # self.model.load_weights(self.model_save_path, by_name=True)
         self.model.evaluate(self.dev_dataset.for_fit(), steps=self.dev_dataset.steps)
 
     def get_call_code(self):
