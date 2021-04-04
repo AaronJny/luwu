@@ -17,6 +17,8 @@ def read_image(image_file_path: str):
     image = tf.image.resize(image, [{{image_size}}, {{image_size}}])
     # 将图片的像素值缩放到[0,1]之间
     image = tf.cast(image, dtype=tf.float32) / 255.0
+    {% if with_image_net %}
     # 归一化
     image = (image - image_mean) / image_std
+    {% endif %}
     return image
