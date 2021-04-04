@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # @Date         : 2020-12-30
 # @Author       : AaronJny
-# @LastEditTime : 2021-03-16
+# @LastEditTime : 2021-04-04
 # @FilePath     : /LuWu/luwu/core/models/classifier/__init__.py
 # @Desc         :
 import os
@@ -27,10 +27,12 @@ class LuwuImageClassifier:
         validation_split: float = 0.2,
         batch_size: int = 32,
         epochs: int = 30,
+        learning_rate: float = 0.01,
         project_id: int = 0,
         image_size: int = 224,
         do_fine_tune=False,
         with_image_net=True,
+        optimizer: str = "Adam",
         **kwargs,
     ):
         """
@@ -40,14 +42,18 @@ class LuwuImageClassifier:
             model_save_path (str): 模型保存路径
             validation_split (float): 验证集切割比例
             batch_size (int): mini batch 大小
+            learning_rate (float): 学习率大小
             epochs (int): 训练epoch数
             project_id (int): 训练项目编号
             with_image_net (bool): 是否使用imagenet的均值初始化数据
+            optimizer_cls (str): 优化器类别
         """
         self._call_code = ""
         self.project_id = project_id
         self.do_fine_tune = do_fine_tune
         self.with_image_net = with_image_net
+        self.learning_rate = learning_rate
+        self.optimizer_cls = self.get_optimizer_cls(optimizer)
         origin_dataset_path = file_util.abspath(origin_dataset_path)
         tfrecord_dataset_path = file_util.abspath(tfrecord_dataset_path)
         model_save_path = file_util.abspath(model_save_path)
@@ -77,6 +83,23 @@ class LuwuImageClassifier:
         self.epochs = epochs
         file_util.mkdirs(self.project_save_path)
         file_util.mkdirs(self.tfrecord_dataset_path)
+
+    def get_optimizer_cls(self, optimizer_cls):
+        optimizer_list = [
+            "Adam",
+            "Adamax",
+            "Adagrad",
+            "Nadam",
+            "Adadelta",
+            "SGD",
+            "RMSprop",
+        ]
+        if isinstance(optimizer_cls, str):
+            if optimizer_cls and optimizer_cls in optimizer_list:
+                return getattr(tf.keras.optimizers, optimizer_cls)
+        if issubclass(optimizer_cls, tf.keras.optimizers.Optimizer):
+            return optimizer_cls
+        raise Exception(f"指定的 Optimizer 类别不正确！{optimizer_cls}")
 
     def build_model(self) -> tf.keras.Model:
         """构建模型

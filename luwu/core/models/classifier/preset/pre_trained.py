@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # @Date         : 2021-01-21
 # @Author       : AaronJny
-# @LastEditTime : 2021-03-21
+# @LastEditTime : 2021-04-04
 # @FilePath     : /LuWu/luwu/core/models/classifier/preset/pre_trained.py
 # @Desc         : 封装tf.keras里设置的预训练模型，并对外提供支持
 import os
@@ -41,7 +41,7 @@ class LuwuPreTrainedImageClassifier(LuwuImageClassifier):
             ]
         )
         model.compile(
-            optimizer=tf.keras.optimizers.Adam(),
+            optimizer=self.optimizer_cls(learning_rate=self.learning_rate),
             loss=tf.keras.losses.categorical_crossentropy,
             metrics=["accuracy"],
         )
@@ -136,6 +136,7 @@ class LuwuLeNetImageClassifier(LuwuPreTrainedImageClassifier):
         # todo: 为模型增加dropout和正则，以适当减轻过拟合
         model = tf.keras.Sequential(
             [
+                tf.keras.Input(shape=(self.image_size, self.image_size, 3)),
                 tf.keras.layers.Conv2D(6, (5, 5), padding="same"),
                 # 添加BN层，将数据调整为均值0，方差1
                 tf.keras.layers.BatchNormalization(),
@@ -169,7 +170,7 @@ class LuwuLeNetImageClassifier(LuwuPreTrainedImageClassifier):
         #         if hasattr(layer, "kernel_regularizer"):
         #             layer.kernel_regularizer = tf.keras.regularizers.l2(0.01)
         model.compile(
-            optimizer=tf.keras.optimizers.Adam(),
+            optimizer=self.optimizer_cls(learning_rate=self.learning_rate),
             loss=tf.keras.losses.categorical_crossentropy,
             metrics=["accuracy"],
         )

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # @Author       : AaronJny
-# @LastEditTime : 2021-04-02
+# @LastEditTime : 2021-04-04
 # @FilePath     : /LuWu/bin/luwu.py
 # @Desc         :
 import argparse
@@ -139,7 +139,13 @@ parse_classification.add_argument(
     "--epochs", help="训练epoch数。默认 30.", type=int, default=30
 )
 parse_classification.add_argument(
-    "--learning_rate", "-lr", help="学习率。默认 0.01.", type=float, default=0.01
+    "--learning_rate", "-lr", help="学习率。默认 0.001.", type=float, default=0.001
+)
+parse_classification.add_argument(
+    "--optimizer",
+    help="训练时的优化器类型,可选参数为 [Adam, Adamax, Adagrad, Nadam, Adadelta, SGD, RMSprop]。默使用 Adam.",
+    type=str,
+    default="Adam",
 )
 parse_classification.add_argument(
     "--project_id", help="项目编号. Defaults to 0.", type=int, default=0

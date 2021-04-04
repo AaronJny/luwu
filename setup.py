@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # @Author       : AaronJny
-# @LastEditTime : 2021-03-26
+# @LastEditTime : 2021-04-04
 # @FilePath     : /LuWu/setup.py
 # @Desc         :
 import os
@@ -40,7 +40,7 @@ class LuwuInstallScripts(install_scripts):
 
 setup(
     name="luwu",
-    version="0.29",
+    version="0.30.dev1",
     author="AaronJny",
     author_email="aaronjny7@gmail.com",
     description="LuWu——陆吾，一个简单的无代码深度学习平台。",
