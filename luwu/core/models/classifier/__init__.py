@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # @Date         : 2020-12-30
 # @Author       : AaronJny
-# @LastEditTime : 2021-04-04
+# @LastEditTime : 2021-04-05
 # @FilePath     : /LuWu/luwu/core/models/classifier/__init__.py
 # @Desc         :
 import os
@@ -20,20 +20,21 @@ import numpy as np
 
 class LuwuImageClassifier:
     def __init__(
-        self,
-        origin_dataset_path: str = "",
-        tfrecord_dataset_path: str = "",
-        model_save_path: str = "",
-        validation_split: float = 0.2,
-        batch_size: int = 32,
-        epochs: int = 30,
-        learning_rate: float = 0.01,
-        project_id: int = 0,
-        image_size: int = 224,
-        do_fine_tune=False,
-        with_image_net=True,
-        optimizer: str = "Adam",
-        **kwargs,
+            self,
+            origin_dataset_path: str = "",
+            tfrecord_dataset_path: str = "",
+            model_save_path: str = "",
+            validation_split: float = 0.2,
+            batch_size: int = 32,
+            epochs: int = 30,
+            learning_rate: float = 0.01,
+            project_id: int = 0,
+            image_size: int = 224,
+            do_fine_tune=False,
+            with_image_net=True,
+            optimizer: str = "Adam",
+            freeze_epochs_ratio: float = 0.1,
+            **kwargs,
     ):
         """
         Args:
@@ -47,12 +48,17 @@ class LuwuImageClassifier:
             project_id (int): 训练项目编号
             with_image_net (bool): 是否使用imagenet的均值初始化数据
             optimizer_cls (str): 优化器类别
+            freeze_epochs_ratio (float): 当进行fine_tune时，会先冻结预训练模型进行训练一定epochs，
+                                        再解冻全部参数训练一定epochs，此参数表示冻结训练epochs占
+                                        全部epochs的比例（此参数仅当 do_fine_tune = True 时有效）。
+                                        默认 0.1（当总epochs>1时，只要设置了比例，至少会训练一个epoch）
         """
         self._call_code = ""
         self.project_id = project_id
         self.do_fine_tune = do_fine_tune
         self.with_image_net = with_image_net
         self.learning_rate = learning_rate
+        self.freeze_epochs_ratio = freeze_epochs_ratio
         self.optimizer_cls = self.get_optimizer_cls(optimizer)
         origin_dataset_path = file_util.abspath(origin_dataset_path)
         tfrecord_dataset_path = file_util.abspath(tfrecord_dataset_path)
@@ -101,13 +107,31 @@ class LuwuImageClassifier:
             return optimizer_cls
         raise Exception(f"指定的 Optimizer 类别不正确！{optimizer_cls}")
 
+    def define_model(self) -> tf.keras.Model:
+        """
+        定义模型
+        """
+        raise NotImplementedError
+
+    def define_optimizer(self):
+        """
+        定义优化器
+        """
+        self.model.compile(
+            optimizer=self.optimizer_cls(learning_rate=self.learning_rate),
+            loss=tf.keras.losses.categorical_crossentropy,
+            metrics=["accuracy"],
+        )
+
     def build_model(self) -> tf.keras.Model:
         """构建模型
 
         Raises:
             NotImplementedError: 待实现具体方法
         """
-        raise NotImplementedError
+        self.model = self.define_model()
+        self.define_optimizer()
+        return self.model
 
     @property
     def kaggle_envs(self):
@@ -221,6 +245,7 @@ class LuwuImageClassifier:
 
 from luwu.core.models.classifier.preset import (
     LuwuLeNetImageClassifier,
+    LuwuPreTrainedImageClassifier,
     LuwuDenseNet121ImageClassifier,
     LuwuDenseNet169ImageClassifier,
     LuwuDenseNet201ImageClassifier,
