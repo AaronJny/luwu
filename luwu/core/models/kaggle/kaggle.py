@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # @Author       : AaronJny
-# @LastEditTime : 2021-03-21
+# @LastEditTime : 2021-04-03
 # @FilePath     : /LuWu/luwu/core/models/kaggle/kaggle.py
 # @Desc         :
 import os
@@ -241,17 +241,17 @@ class KaggleUtil:
                 # 运行之前，所有的状态都忽略
                 if not running:
                     if status == "running":
-                        logger.info(f"{self.dataset_id} running ...")
+                        logger.info(f"{self.kernel_id} running ...")
                         running = True
                 else:
                     # 运行之后，找到第一次非 running 状态就退出
                     if status == "running":
-                        logger.info(f"{self.dataset_id} running ...")
+                        logger.info(f"{self.kernel_id} running ...")
                     else:
                         self.kernel_exit_status = status
                         logger.info(output)
                         logger.info(
-                            f"{self.dataset_id} 终止状态：{self.kernel_exit_status} . 已退出！"
+                            f"{self.kernel_id} 终止状态：{self.kernel_exit_status} . 已退出！"
                         )
                         break
                 time.sleep(10)

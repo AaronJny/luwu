@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 # @Date         : 2021-01-21
 # @Author       : AaronJny
-# @LastEditTime : 2021-03-21
+# @LastEditTime : 2021-04-05
 # @FilePath     : /LuWu/luwu/core/models/classifier/preset/pre_trained.py
 # @Desc         : 封装tf.keras里设置的预训练模型，并对外提供支持
 import os
+from abc import ABC
 
 import tensorflow as tf
 from jinja2 import Template
@@ -12,27 +13,18 @@ from luwu.core.models.classifier import LuwuImageClassifier
 from loguru import logger
 
 
-class LuwuPreTrainedImageClassifier(LuwuImageClassifier):
+class LuwuPreTrainedImageClassifier(LuwuImageClassifier, ABC):
     def __init__(self, net_name, *args, **kwargs):
         super(LuwuPreTrainedImageClassifier, self).__init__(*args, **kwargs)
         self.net_name = net_name
 
-    def build_model(self):
+    def define_model(self) -> tf.keras.Model:
         pre_trained_net: tf.keras.Model = getattr(
             tf.keras.applications, self.net_name
         )()
         pre_trained_net.trainable = False
         # 记录densenet
         self.pre_trained_net = pre_trained_net
-        # model = tf.keras.Sequential(
-        #     [
-        #         pre_trained_net,
-        #         tf.keras.layers.Flatten(),
-        #         tf.keras.layers.Dense(120, activation="relu"),
-        #         tf.keras.layers.Dropout(0.3),
-        #         tf.keras.layers.Dense(len(self.classes_num_dict), activation="softmax"),
-        #     ]
-        # )
         model = tf.keras.Sequential(
             [
                 pre_trained_net,
@@ -40,12 +32,6 @@ class LuwuPreTrainedImageClassifier(LuwuImageClassifier):
                 tf.keras.layers.Dense(len(self.classes_num_dict), activation="softmax"),
             ]
         )
-        model.compile(
-            optimizer=tf.keras.optimizers.Adam(),
-            loss=tf.keras.losses.categorical_crossentropy,
-            metrics=["accuracy"],
-        )
-        self.model = model
         return model
 
     def train(self):
@@ -53,8 +39,9 @@ class LuwuPreTrainedImageClassifier(LuwuImageClassifier):
         checkpoint = tf.keras.callbacks.ModelCheckpoint(
             self.model_save_path, monitor="val_accuracy", save_best_only=True
         )
-        if self.do_fine_tune:
-            pre_train_epochs = int(self.epochs / 2)
+        if self.do_fine_tune and self.freeze_epochs_ratio:
+            # 如果选择了fine tune，则至少冻结训练一个epoch
+            pre_train_epochs = max(1, int(self.freeze_epochs_ratio * self.epochs))
         else:
             pre_train_epochs = 0
         train_epochs = self.epochs - pre_train_epochs
@@ -132,10 +119,11 @@ class LuwuLeNetImageClassifier(LuwuPreTrainedImageClassifier):
         kwargs["image_size"] = 32
         super(LuwuLeNetImageClassifier, self).__init__(*args, **kwargs)
 
-    def build_model(self):
+    def define_model(self) -> tf.keras.Model:
         # todo: 为模型增加dropout和正则，以适当减轻过拟合
         model = tf.keras.Sequential(
             [
+                tf.keras.Input(shape=(self.image_size, self.image_size, 3)),
                 tf.keras.layers.Conv2D(6, (5, 5), padding="same"),
                 # 添加BN层，将数据调整为均值0，方差1
                 tf.keras.layers.BatchNormalization(),
@@ -168,12 +156,6 @@ class LuwuLeNetImageClassifier(LuwuPreTrainedImageClassifier):
         #     for layer in model.layers:
         #         if hasattr(layer, "kernel_regularizer"):
         #             layer.kernel_regularizer = tf.keras.regularizers.l2(0.01)
-        model.compile(
-            optimizer=tf.keras.optimizers.Adam(),
-            loss=tf.keras.losses.categorical_crossentropy,
-            metrics=["accuracy"],
-        )
-        self.model = model
         return model
 
     def train(self):

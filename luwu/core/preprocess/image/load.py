@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 # @Date         : 2021-01-07
 # @Author       : AaronJny
-# @LastEditTime : 2021-01-28
-# @FilePath     : /app/luwu/core/preprocess/image/load.py
+# @LastEditTime : 2021-04-03
+# @FilePath     : /LuWu/luwu/core/preprocess/image/load.py
 # @Desc         :
+import imghdr
 import os
 from glob import glob
 from typing import List, Tuple
@@ -43,6 +44,11 @@ def write_tfrecords_to_target_path(
             writer.write(example.SerializeToString())
 
 
+def is_image(file_path):
+    """判断给定文件是否为图片"""
+    return imghdr.what(file_path) == "jpeg"
+
+
 def read_classify_dataset_from_dir(dataset_path: str):
     """从给定地址读取并清洗按文件夹组织的图片数据集
 
@@ -50,14 +56,15 @@ def read_classify_dataset_from_dir(dataset_path: str):
         dataset_path (str): 原始数据集地址
     """
     classes_num_dict = {}
-    image_suffixes = {"jpg", "jpeg", "png"}
+    # image_suffixes = {"jpg", "jpeg", "png"}
     data = []
     for sub_path in glob(os.path.join(dataset_path, "*")):
         if os.path.isdir(sub_path):
             class_name = sub_path.split("/")[-1]
             classes_num_dict[class_name] = len(classes_num_dict)
             for image in glob(os.path.join(sub_path, "*")):
-                if image.split(".")[-1].lower() in image_suffixes:
+                # if image.split(".")[-1].lower() in image_suffixes:
+                if is_image(image):
                     data.append((image, classes_num_dict[class_name]))
     return data, classes_num_dict
 

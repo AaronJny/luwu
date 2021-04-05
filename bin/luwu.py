@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # @Author       : AaronJny
-# @LastEditTime : 2021-03-17
+# @LastEditTime : 2021-04-04
 # @FilePath     : /LuWu/bin/luwu.py
 # @Desc         :
 import argparse
@@ -121,7 +121,16 @@ parse_classification.add_argument(
     "--validation_split", help="验证集切割比例。默认 0.2", type=float, default=0.2
 )
 parse_classification.add_argument(
-    "--do_fine_tune", help="是进行fine tune，还是重新训练。默认 False", type=bool, default=False
+    "--do_fine_tune",
+    help="是进行fine tune，还是重新训练。默认 False",
+    type=ast.literal_eval,
+    default=False,
+)
+parse_classification.add_argument(
+    "--freeze_epochs_ratio",
+    help="当进行fine_tune时，会先冻结预训练模型进行训练一定epochs，再解冻全部参数训练一定epochs，此参数表示冻结训练epochs占全部epochs的比例（此参数仅当 do_fine_tune = True 时有效）。默认 0.1（当总epochs>1时，只要设置了比例，至少会训练一个epoch）",
+    type=float,
+    default=0.1,
 )
 parse_classification.add_argument(
     "--batch_size", help="mini batch 大小。默认 32.", type=int, default=8
@@ -130,18 +139,27 @@ parse_classification.add_argument(
     "--epochs", help="训练epoch数。默认 30.", type=int, default=30
 )
 parse_classification.add_argument(
+    "--learning_rate", "-lr", help="学习率。默认 0.001.", type=float, default=0.001
+)
+parse_classification.add_argument(
+    "--optimizer",
+    help="训练时的优化器类型,可选参数为 [Adam, Adamax, Adagrad, Nadam, Adadelta, SGD, RMSprop]。默使用 Adam.",
+    type=str,
+    default="Adam",
+)
+parse_classification.add_argument(
     "--project_id", help="项目编号. Defaults to 0.", type=int, default=0
 )
 parse_classification.add_argument(
     "--run_with_kaggle",
     help="是否使用kaggle环境运行。必须先安装并配置kaggle api,才可以使用此选项。默认为False，即本地运行",
-    type=bool,
+    type=ast.literal_eval,
     default=False,
 )
 parse_classification.add_argument(
     "--kaggle_accelerator",
     help="是否使用kaggle GPU进行加速（注意，仅当 run_with_kaggle 为 True 时此选项才有效）。默认不使用（即使用CPU）",
-    type=bool,
+    type=ast.literal_eval,
     default=False,
 )
 
