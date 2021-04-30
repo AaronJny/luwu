@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # @Date         : 2021-01-07
 # @Author       : AaronJny
-# @LastEditTime : 2021-04-03
+# @LastEditTime : 2021-04-15
 # @FilePath     : /LuWu/luwu/core/preprocess/image/load.py
 # @Desc         :
 import imghdr
@@ -49,19 +49,29 @@ def is_image(file_path):
     return imghdr.what(file_path) == "jpeg"
 
 
-def read_classify_dataset_from_dir(dataset_path: str):
+def read_classify_dataset_from_dir(dataset_path: str, classes_num_dict=None):
     """从给定地址读取并清洗按文件夹组织的图片数据集
 
     Args:
         dataset_path (str): 原始数据集地址
     """
-    classes_num_dict = {}
+    if classes_num_dict is None:
+        classes_num_dict = {}
     # image_suffixes = {"jpg", "jpeg", "png"}
     data = []
+    # 创建固定的标签映射
+    classes_name = []
     for sub_path in glob(os.path.join(dataset_path, "*")):
         if os.path.isdir(sub_path):
             class_name = sub_path.split("/")[-1]
-            classes_num_dict[class_name] = len(classes_num_dict)
+            classes_name.append(class_name)
+    classes_name = sorted(classes_name)
+    classes_num_dict = dict(zip(classes_name, range(len(classes_name))))
+    # 逐条处理图片
+    for sub_path in glob(os.path.join(dataset_path, "*")):
+        if os.path.isdir(sub_path):
+            class_name = sub_path.split("/")[-1]
+            # classes_num_dict[class_name] = len(classes_num_dict)
             for image in glob(os.path.join(sub_path, "*")):
                 # if image.split(".")[-1].lower() in image_suffixes:
                 if is_image(image):

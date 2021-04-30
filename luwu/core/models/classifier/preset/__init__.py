@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 # @Date         : 2021-01-21
 # @Author       : AaronJny
-# @LastEditTime : 2021-03-12
+# @LastEditTime : 2021-04-06
 # @FilePath     : /LuWu/luwu/core/models/classifier/preset/__init__.py
 # @Desc         :
 from luwu.core.models.classifier.preset.pre_trained import (
     LuwuLeNetImageClassifier,
+    LuwuPreTrainedImageClassifier,
     LuwuDenseNet121ImageClassifier,
     LuwuDenseNet169ImageClassifier,
     LuwuDenseNet201ImageClassifier,

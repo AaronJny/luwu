@@ -161,3 +161,4 @@ build/*
 dist/*
 luwu.egg-info/*
 .VSCodeCounter/*
+.idea/
