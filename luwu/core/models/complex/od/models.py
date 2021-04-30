@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # @Author       : AaronJny
-# @LastEditTime : 2021-03-16
+# @LastEditTime : 2021-04-29
 # @FilePath     : /LuWu/luwu/core/models/complex/od/models.py
 # @Desc         :
 import os
@@ -299,7 +299,7 @@ class LuWuTFModelsObjectDetector(LuWuObjectDetector):
                     os.makedirs(self.project_save_path)
                     break
                 elif text == "n":
-                    logger.info("请重选选择模型保存的目录，程序已退出。")
+                    logger.info("请重新选择模型保存的目录，程序已退出。")
                     exit(-1)
                 else:
                     continue

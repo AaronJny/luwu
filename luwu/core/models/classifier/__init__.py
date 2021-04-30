@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # @Date         : 2020-12-30
 # @Author       : AaronJny
-# @LastEditTime : 2021-04-05
+# @LastEditTime : 2021-04-15
 # @FilePath     : /LuWu/luwu/core/models/classifier/__init__.py
 # @Desc         :
 import os
@@ -20,28 +20,41 @@ import numpy as np
 
 class LuwuImageClassifier:
     def __init__(
-            self,
-            origin_dataset_path: str = "",
-            tfrecord_dataset_path: str = "",
-            model_save_path: str = "",
-            validation_split: float = 0.2,
-            batch_size: int = 32,
-            epochs: int = 30,
-            learning_rate: float = 0.01,
-            project_id: int = 0,
-            image_size: int = 224,
-            do_fine_tune=False,
-            with_image_net=True,
-            optimizer: str = "Adam",
-            freeze_epochs_ratio: float = 0.1,
-            **kwargs,
+        self,
+        origin_dataset_path: str = "",
+        validation_dataset_path: str = "",
+        test_dataset_path: str = "",
+        tfrecord_dataset_path: str = "",
+        model_save_path: str = "",
+        validation_split: float = 0.1,
+        test_split: float = 0.1,
+        batch_size: int = 32,
+        epochs: int = 30,
+        learning_rate: float = 0.01,
+        project_id: int = 0,
+        image_size: int = 224,
+        do_fine_tune=False,
+        with_image_net=True,
+        optimizer: str = "Adam",
+        freeze_epochs_ratio: float = 0.1,
+        image_augmentation_random_flip_horizontal: bool = False,
+        image_augmentation_random_flip_vertival: bool = False,
+        image_augmentation_random_crop: bool = False,
+        image_augmentation_random_brightness: bool = False,
+        image_augmentation_random_hue: bool = False,
+        **kwargs,
     ):
         """
         Args:
             origin_dataset_path (str): 处理前的数据集路径
+            validation_dataset_path (str): 验证数据集路径。如不指定，
+                    则从origin_dataset_path中进行切分。
+            test_dataset_path (str): 测试数据集路径。如不指定，则从
+                                    origin_dataset_path中进行切分。
             tfrecord_dataset_path (str): 处理后的数据集路径
             model_save_path (str): 模型保存路径
             validation_split (float): 验证集切割比例
+            test_split (float): 测试集切割比例
             batch_size (int): mini batch 大小
             learning_rate (float): 学习率大小
             epochs (int): 训练epoch数
@@ -52,6 +65,11 @@ class LuwuImageClassifier:
                                         再解冻全部参数训练一定epochs，此参数表示冻结训练epochs占
                                         全部epochs的比例（此参数仅当 do_fine_tune = True 时有效）。
                                         默认 0.1（当总epochs>1时，只要设置了比例，至少会训练一个epoch）
+            image_augmentation_random_flip_horizontal (bool): 数据增强选项，是否做随机左右镜像。默认False.
+            image_augmentation_random_flip_vertival (bool): 数据增强选项，是否做随机上下镜像。默认False.
+            image_augmentation_random_crop (bool): 数据增强选项，是否做随机剪裁，剪裁尺寸为原来比例的0.9。默认False.
+            image_augmentation_random_brightness (bool): 数据增强选项，是否做随机饱和度调节。默认False.
+            image_augmentation_random_hue (bool): 数据增强选项，是否做随机色调调节。默认False.
         """
         self._call_code = ""
         self.project_id = project_id
@@ -59,12 +77,29 @@ class LuwuImageClassifier:
         self.with_image_net = with_image_net
         self.learning_rate = learning_rate
         self.freeze_epochs_ratio = freeze_epochs_ratio
+        self.image_augmentation_random_flip_horizontal = (
+            image_augmentation_random_flip_horizontal
+        )
+        self.image_augmentation_random_flip_vertival = (
+            image_augmentation_random_flip_vertival
+        )
+        self.image_augmentation_random_crop = image_augmentation_random_crop
+        self.image_augmentation_random_brightness = image_augmentation_random_brightness
+        self.image_augmentation_random_hue = image_augmentation_random_hue
         self.optimizer_cls = self.get_optimizer_cls(optimizer)
         origin_dataset_path = file_util.abspath(origin_dataset_path)
         tfrecord_dataset_path = file_util.abspath(tfrecord_dataset_path)
         model_save_path = file_util.abspath(model_save_path)
         self.image_size = image_size
         self.origin_dataset_path = origin_dataset_path
+        if validation_dataset_path:
+            self.validation_dataset_path = file_util.abspath(validation_dataset_path)
+        else:
+            self.validation_dataset_path = validation_dataset_path
+        if test_dataset_path:
+            self.test_dataset_path = file_util.abspath(test_dataset_path)
+        else:
+            self.test_dataset_path = test_dataset_path
         # 当未给定处理后数据集的路径时，默认保存到原始数据集相同路径
         if tfrecord_dataset_path:
             self.tfrecord_dataset_path = tfrecord_dataset_path
@@ -85,6 +120,7 @@ class LuwuImageClassifier:
             )
         self.model_save_path = os.path.join(self.project_save_path, "best_weights.h5")
         self.validation_split = validation_split
+        self.test_split = test_split
         self.batch_size = batch_size
         self.epochs = epochs
         file_util.mkdirs(self.project_save_path)
@@ -138,12 +174,40 @@ class LuwuImageClassifier:
         """返回使用kaggle运行时的需要的参数"""
         return {}
 
+    def load_data_from_dir(self, dirpath, classes_num_dict=None):
+        data, classes_num_dict = read_classify_dataset_from_dir(
+            dirpath, classes_num_dict=classes_num_dict
+        )
+        return data, classes_num_dict
+
     def preprocess_dataset(self):
         """对数据集进行预处理"""
         # 读取原始数据
         data, classes_num_dict = read_classify_dataset_from_dir(
             self.origin_dataset_path
         )
+        # 切分数据集
+        total = len(data)
+        # 判断有没有指定验证集
+        if self.validation_dataset_path:
+            # 如果指定了，就从指定路径读取
+            dev_data, classes_num_dict = read_classify_dataset_from_dir(
+                self.validation_dataset_path, classes_num_dict=classes_num_dict
+            )
+        else:
+            dev_nums = int(total * self.validation_split)
+            dev_data = random.sample(data, dev_nums)
+        # 判断有没有指定测试集
+        if self.test_dataset_path:
+            # 如果制定了，就从指定路径读取
+            test_data, classes_num_dict = read_classify_dataset_from_dir(
+                self.test_dataset_path, classes_num_dict=classes_num_dict
+            )
+        else:
+            test_nums = int(total * self.test_split)
+            test_data = random.sample(data, test_nums)
+        train_data = list(set(data) - set(dev_data) - set(test_data))
+        np.random.shuffle(train_data)
         # 类别->编号的映射
         self.classes_num_dict = classes_num_dict
         # 编号->类别的映射
@@ -157,6 +221,12 @@ class LuwuImageClassifier:
         self.target_dev_dataset_path = os.path.join(
             self.tfrecord_dataset_path, "dev_dataset"
         )
+        if test_data:
+            self.target_test_dataset_path = os.path.join(
+                self.tfrecord_dataset_path, "dev_dataset"
+            )
+        else:
+            self.target_test_dataset_path = None
         # if (
         #     os.path.exists(self.target_train_dataset_path)
         #     and os.path.exists(self.target_dev_dataset_path)
@@ -165,13 +235,7 @@ class LuwuImageClassifier:
         # ):
         #     logger.info("TFRecord数据集已存在。跳过！")
         # else:
-        # 切分数据
-        total = len(data)
-        dev_nums = int(total * self.validation_split)
-        dev_data = random.sample(data, dev_nums)
-        train_data = list(set(data) - set(dev_data))
-        np.random.shuffle(train_data)
-        # np.random.shuffle(dev_data)
+
         del data
 
         # 制作tfrecord数据集
@@ -181,19 +245,47 @@ class LuwuImageClassifier:
         write_tfrecords_to_target_path(
             dev_data, len(classes_num_dict), self.target_dev_dataset_path
         )
+        if self.target_test_dataset_path:
+            write_tfrecords_to_target_path(
+                test_data, len(classes_num_dict), self.target_test_dataset_path
+            )
         # 读取tfrecord数据集
         self.train_dataset = ImageClassifierDataGnenrator(
             self.target_train_dataset_path,
             batch_size=self.batch_size,
             image_size=self.image_size,
             with_image_net=self.with_image_net,
+            image_augmentation_random_flip_horizontal=self.image_augmentation_random_flip_horizontal,
+            image_augmentation_random_flip_vertival=self.image_augmentation_random_flip_vertival,
+            image_augmentation_random_crop=self.image_augmentation_random_crop,
+            image_augmentation_random_brightness=self.image_augmentation_random_brightness,
+            image_augmentation_random_hue=self.image_augmentation_random_hue,
         )
         self.dev_dataset = ImageClassifierDataGnenrator(
             self.target_dev_dataset_path,
             batch_size=self.batch_size,
             image_size=self.image_size,
             with_image_net=self.with_image_net,
+            image_augmentation_random_flip_horizontal=self.image_augmentation_random_flip_horizontal,
+            image_augmentation_random_flip_vertival=self.image_augmentation_random_flip_vertival,
+            image_augmentation_random_crop=self.image_augmentation_random_crop,
+            image_augmentation_random_brightness=self.image_augmentation_random_brightness,
+            image_augmentation_random_hue=self.image_augmentation_random_hue,
         )
+        if self.target_test_dataset_path:
+            self.test_dataset = ImageClassifierDataGnenrator(
+                self.target_test_dataset_path,
+                batch_size=self.batch_size,
+                image_size=self.image_size,
+                with_image_net=self.with_image_net,
+                image_augmentation_random_flip_horizontal=self.image_augmentation_random_flip_horizontal,
+                image_augmentation_random_flip_vertival=self.image_augmentation_random_flip_vertival,
+                image_augmentation_random_crop=self.image_augmentation_random_crop,
+                image_augmentation_random_brightness=self.image_augmentation_random_brightness,
+                image_augmentation_random_hue=self.image_augmentation_random_hue,
+            )
+        else:
+            self.test_dataset = None
 
     def train(self):
         # callbacks
@@ -210,6 +302,16 @@ class LuwuImageClassifier:
             callbacks=[
                 checkpoint,
             ],
+        )
+        logger.info("在测试集上进行验证...")
+        if self.test_dataset:
+            evaluate_dataset = self.test_dataset
+        else:
+            evaluate_dataset = self.dev_dataset
+        logger.info(
+            self.model.evaluate(
+                evaluate_dataset.for_fit(), steps=evaluate_dataset.steps
+            )
         )
 
     def run(self):

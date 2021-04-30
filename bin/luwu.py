@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # @Author       : AaronJny
-# @LastEditTime : 2021-04-04
+# @LastEditTime : 2021-04-15
 # @FilePath     : /LuWu/bin/luwu.py
 # @Desc         :
 import argparse
@@ -112,13 +112,28 @@ parse_classification.add_argument(
     "--origin_dataset_path", help="处理前的数据集路径", type=str, default=""
 )
 parse_classification.add_argument(
+    "--validation_dataset_path",
+    help="验证数据集路径。如不指定，则从origin_dataset_path中进行切分。",
+    type=str,
+    default="",
+)
+parse_classification.add_argument(
+    "--test_dataset_path",
+    help="测试数据集路径。如不指定，则从origin_dataset_path中进行切分。",
+    type=str,
+    default="",
+)
+parse_classification.add_argument(
     "--tfrecord_dataset_path", help="处理后的tfrecord数据集路径", type=str, default=""
 )
 parse_classification.add_argument(
     "--model_save_path", help="模型保存路径", type=str, default=""
 )
 parse_classification.add_argument(
-    "--validation_split", help="验证集切割比例。默认 0.2", type=float, default=0.2
+    "--validation_split", help="验证集切割比例。默认 0.1", type=float, default=0.1
+)
+parse_classification.add_argument(
+    "--test_split", help="测试集切割比例。默认 0.1", type=float, default=0.1
 )
 parse_classification.add_argument(
     "--do_fine_tune",
@@ -149,6 +164,36 @@ parse_classification.add_argument(
 )
 parse_classification.add_argument(
     "--project_id", help="项目编号. Defaults to 0.", type=int, default=0
+)
+parse_classification.add_argument(
+    "--image_augmentation_random_flip_horizontal",
+    help="数据增强选项，是否做随机左右镜像。默认False.",
+    type=ast.literal_eval,
+    default=False,
+)
+parse_classification.add_argument(
+    "--image_augmentation_random_flip_vertival",
+    help="数据增强选项，是否做随机上下镜像。默认False.",
+    type=ast.literal_eval,
+    default=False,
+)
+parse_classification.add_argument(
+    "--image_augmentation_random_crop",
+    help="数据增强选项，是否做随机剪裁，剪裁尺寸为原来比例的0.9。默认False.",
+    type=ast.literal_eval,
+    default=False,
+)
+parse_classification.add_argument(
+    "--image_augmentation_random_brightness",
+    help="数据增强选项，是否做随机饱和度调节。默认False.",
+    type=ast.literal_eval,
+    default=False,
+)
+parse_classification.add_argument(
+    "--image_augmentation_random_hue",
+    help="数据增强选项，是否做随机色调调节。默认False.",
+    type=ast.literal_eval,
+    default=False,
 )
 parse_classification.add_argument(
     "--run_with_kaggle",
