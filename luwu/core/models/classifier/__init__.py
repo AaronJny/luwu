@@ -60,7 +60,7 @@ class LuwuImageClassifier:
             epochs (int): 训练epoch数
             project_id (int): 训练项目编号
             with_image_net (bool): 是否使用imagenet的均值初始化数据
-            optimizer_cls (str): 优化器类别
+            optimizer (str): 优化器类别
             freeze_epochs_ratio (float): 当进行fine_tune时，会先冻结预训练模型进行训练一定epochs，
                                         再解冻全部参数训练一定epochs，此参数表示冻结训练epochs占
                                         全部epochs的比例（此参数仅当 do_fine_tune = True 时有效）。
