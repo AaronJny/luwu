@@ -1,22 +1,27 @@
 # -*- coding: utf-8 -*-
 # @Date         : 2021-01-20
 # @Author       : AaronJny
-# @LastEditTime : 2021-04-21
+# @LastEditTime : 2021-05-11
 # @FilePath     : /LuWu/luwu/core/preprocess/data/data_generator.py
 # @Desc         :
+import math
 import os
 
+os.environ["TF_KERAS"] = "1"
+
+import numpy as np
 import tensorflow as tf
+from bert4keras.snippets import sequence_padding
 from jinja2 import Template
 from luwu.core.preprocess.image.process import (
     extract_image_and_label_from_record,
-    normalized_image,
-    normalized_image_with_imagenet,
+    image_random_brightness,
+    image_random_crop,
     image_random_flip_horizontal,
     image_random_flip_vertical,
-    image_random_crop,
-    image_random_brightness,
     image_random_hue,
+    normalized_image,
+    normalized_image_with_imagenet,
 )
 
 
@@ -160,3 +165,124 @@ class ImageClassifierDataGnenrator(BaseDataGenerator):
         return template.render(
             image_size=self.image_size, with_image_net=self.with_image_net
         )
+
+
+class DataGenerator(object):
+    """数据生成器模版(修改自 苏剑林 大佬的 bert4keras.)"""
+
+    def __init__(self, data, batch_size=32, buffer_size=None):
+        self.data = data
+        self.batch_size = batch_size
+        if hasattr(self.data, "__len__"):
+            self.steps = int(math.ceil(len(self.data) / self.batch_size))
+        else:
+            self.steps = None
+        self.buffer_size = buffer_size or batch_size * 1000
+
+    def __len__(self):
+        return self.steps
+
+    def sample(self, random=False):
+        """采样函数，每个样本同时返回一个is_end标记"""
+        if random:
+            if self.steps is None:
+
+                def generator():
+                    caches, isfull = [], False
+                    for d in self.data:
+                        caches.append(d)
+                        if isfull:
+                            i = np.random.randint(len(caches))
+                            yield caches.pop(i)
+                        elif len(caches) == self.buffer_size:
+                            isfull = True
+                    while caches:
+                        i = np.random.randint(len(caches))
+                        yield caches.pop(i)
+
+            else:
+
+                def generator():
+                    for i in np.random.permutation(len(self.data)):
+                        yield self.data[i]
+
+            data = generator()
+        else:
+            data = iter(self.data)
+
+        d_current = next(data)
+        for d_next in data:
+            yield False, d_current
+            d_current = d_next
+
+        yield True, d_current
+
+    def __iter__(self, random=False):
+        raise NotImplementedError
+
+    def for_fit(self, random=True):
+        while True:
+            yield from self.__iter__(random)
+
+    def to_dataset(self, types, shapes, names=None, padded_batch=False):
+        """转为tf.data.Dataset格式
+        如果传入names的话，自动把数据包装成dict形式。
+        """
+        if names is None:
+
+            generator = self.forfit
+
+        else:
+
+            if isinstance(names, str):
+                warps = lambda k, v: {k: v}
+            elif isinstance(names[0], str):
+                warps = lambda k, v: dict(zip(k, v))
+            else:
+                warps = lambda k, v: tuple(dict(zip(i, j)) for i, j in zip(k, v))
+
+            def generator():
+                for d in self.forfit():
+                    yield warps(names, d)
+
+            types = warps(names, types)
+            shapes = warps(names, shapes)
+
+        if padded_batch:
+            dataset = tf.data.Dataset.from_generator(generator, output_types=types)
+            dataset = dataset.padded_batch(self.batch_size, shapes)
+        else:
+            dataset = tf.data.Dataset.from_generator(
+                generator, output_types=types, output_shapes=shapes
+            )
+            dataset = dataset.batch(self.batch_size)
+
+        return dataset
+
+
+class TransformerTextClassificationDataGenerator(DataGenerator):
+    def __init__(self, labels_num, *args, tokenizer=None, maxlen=128, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.tokenizer = tokenizer
+        self.maxlen = maxlen
+        self.labels_num = labels_num
+
+    def __iter__(self, random=False):
+        batch_token_ids, batch_segment_ids, batch_labels = [], [], []
+        for is_end, item in self.sample(random):
+            token_ids, segment_ids = self.tokenizer.encode(
+                item["text"], maxlen=self.maxlen
+            )
+            batch_token_ids.append(token_ids)
+            batch_segment_ids.append(segment_ids)
+            batch_labels.append(item["label"])
+            if len(batch_token_ids) == self.batch_size or is_end:
+                batch_token_ids = sequence_padding(batch_token_ids)
+                batch_segment_ids = sequence_padding(batch_segment_ids)
+                batch_labels = np.eye(self.labels_num)[np.array(batch_labels)]
+                batch_labels = sequence_padding(batch_labels)
+                yield {
+                    "Input-Token": batch_token_ids,
+                    "Input-Segment": batch_segment_ids,
+                }, batch_labels
+                batch_token_ids, batch_segment_ids, batch_labels = [], [], []

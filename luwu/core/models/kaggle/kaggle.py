@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # @Author       : AaronJny
-# @LastEditTime : 2021-04-03
+# @LastEditTime : 2021-05-12
 # @FilePath     : /LuWu/luwu/core/models/kaggle/kaggle.py
 # @Desc         :
 import os
@@ -13,6 +13,7 @@ import time
 from loguru import logger
 from luwu.core.models.classifier import LuwuImageClassifier
 from luwu.core.models.complex.od.models import LuWuTFModelsObjectDetector
+from luwu.core.models.text_classifier.transformers import TransformerTextClassification
 from luwu.utils import cmd_util, file_util
 
 
@@ -45,7 +46,7 @@ class KaggleUtil:
 
     def upload_dataset(self):
         origin_dataset_path = self.kwargs.get("origin_dataset_path", "")
-        if os.path.exists(origin_dataset_path) and os.path.isdir(origin_dataset_path):
+        if os.path.exists(origin_dataset_path):
             # 先复制一份数据集
             # 创建一个文件夹
             dataset_path = os.path.join(self.tmp_dir_path, "kaggle-data")
@@ -54,7 +55,10 @@ class KaggleUtil:
             file_util.mkdirs(copy_path)
             # 复制数据集到临时目录
             logger.info(f"复制数据集到临时目录...")
-            cmd = f'cp -r {os.path.join(origin_dataset_path,"*")} {copy_path}'
+            if os.path.isdir(origin_dataset_path):
+                cmd = f'cp -r {os.path.join(origin_dataset_path,"*")} {copy_path}'
+            else:
+                cmd = f"cp -r {origin_dataset_path} {copy_path}"
             cmd_util.run_cmd(cmd)
             # 使用kaggle api初始化数据集
             logger.info("使用kaggle api初始化数据集...")
@@ -109,14 +113,15 @@ class KaggleUtil:
         cmd = f"kaggle kernels init -p {kernel_path}"
         cmd_util.run_cmd(cmd)
         # 生成训练脚本
-        override_params = {
-            "project_id",
-            "cmd",
-        }
+        override_params = {"project_id", "cmd", "luwu_version"}
         train_cmd_params = []
         if task_type == "classification":
             project_name = "luwu-classification-project"
             override_params.update(["net_name", "network_name"])
+            # tfrecord数据集路径
+            tfrecord_dataset_path = "./dataset"
+            train_cmd_params.append(f"--tfrecord_dataset_path {tfrecord_dataset_path}")
+            override_params.add("tfrecord_dataset_path")
         elif task_type == "detection":
             project_name = "luwu-object-detection-project"
             override_params.update(
@@ -125,14 +130,20 @@ class KaggleUtil:
                     "fine_tune_checkpoint_path",
                 ]
             )
+            # tfrecord数据集路径
+            tfrecord_dataset_path = "./dataset"
+            train_cmd_params.append(f"--tfrecord_dataset_path {tfrecord_dataset_path}")
+            override_params.add("tfrecord_dataset_path")
+        elif task_type == "text_classification":
+            project_name = "luwu-text-classification-project"
         else:
             raise Exception(f"不支持的任务类型! {task_type}")
-        # tfrecord数据集路径
-        tfrecord_dataset_path = "./dataset"
-        train_cmd_params.append(f"--tfrecord_dataset_path {tfrecord_dataset_path}")
-        override_params.add("tfrecord_dataset_path")
+
         # 原始数据集路径
         origin_dataset_path = os.path.join("../input", self.dataset_title)
+        if self.kwargs.get("cmd") == "text_classification":
+            filename = self.kwargs.get("origin_dataset_path").split("/")[-1]
+            origin_dataset_path = os.path.join(origin_dataset_path, filename)
         train_cmd_params.append(f"--origin_dataset_path {origin_dataset_path}")
         override_params.add("origin_dataset_path")
         # 模型保存路径
@@ -154,6 +165,8 @@ class KaggleUtil:
             train_cmd = f"!luwu {task_type} {' '.join(train_cmd_params)} {self.luwu_model_class.__name__}\n"
         elif task_type == "detection":
             train_cmd = f"!luwu {task_type} {' '.join(train_cmd_params)}\n"
+        elif task_type == "text_classification":
+            train_cmd = f"!luwu {task_type} {' '.join(train_cmd_params)}\n"
         else:
             raise Exception(f"不支持的任务类型! {task_type}")
         project_path = os.path.join(model_save_path, project_name)
@@ -174,12 +187,21 @@ class KaggleUtil:
                 f"&& rm -rf ./{project_name} "
                 f"&& rm -rf {model_save_path} \n"
             )
-            logger.info(project_path)
-            logger.info(project_name)
-            logger.info(zip_cmd)
+        elif task_type == "text_classification":
+            zip_cmd = (
+                f"!mv {project_path} ./ "
+                f"&& zip -r {project_name}-{self.uuid}.zip ./{project_name} "
+                f"&& rm -rf ./{project_name} "
+                f"&& rm -rf {model_save_path} \n"
+            )
+        luwu_version = self.kwargs.get("luwu_version")
+        if luwu_version:
+            install_cmd = f"!pip install luwu=={luwu_version}\n"
+        else:
+            install_cmd = "!pip install luwu\n"
         codes = [
             "# 安装 luwu\n",
-            "!pip install luwu\n",
+            install_cmd,
             "# 执行训练指令\n",
             train_cmd,
             "# 打包待下载文件的指令\n",
@@ -300,6 +322,21 @@ class KaggleUtil:
         self.clean_tmp_files()
         logger.info("[*]完成！")
 
+    def text_classification_entry(self):
+        # 处理原始数据
+        logger.info("[*][1]开始处理数据集...")
+        self.upload_dataset()
+        # 使用Kaggle训练
+        logger.info("[*][2]开始处理kernel...")
+        self.train_on_kaggle(task_type=self.kwargs.get("cmd"))
+        # 下载训练好的数据
+        logger.info("[*][3]开始拉取运行结果...")
+        self.download_result_from_kaggle()
+        # 清理临时文件
+        logger.info("[*][4]清理临时文件...")
+        self.clean_tmp_files()
+        logger.info("[*]完成！")
+
     def object_detection_entry(self):
         # 处理原始数据
         logger.info("[*][1]开始处理数据集...")
@@ -322,5 +359,7 @@ class KaggleUtil:
         # 目标检测任务
         elif issubclass(self.luwu_model_class, LuWuTFModelsObjectDetector):
             self.object_detection_entry()
+        elif issubclass(self.luwu_model_class, TransformerTextClassification):
+            self.text_classification_entry()
         else:
             raise Exception(f"不支持的任务类型！{self.luwu_model_class}")

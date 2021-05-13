@@ -9,3 +9,4 @@ include luwu/core/preprocess/data/templates/*
 include luwu/dist/**/*
 include luwu/core/models/complex/od/templates/**/*
 include luwu/core/models/kaggle/templates/*
+include luwu/core/models/text_classifier/templates/*

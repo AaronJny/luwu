@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
 # @Author       : AaronJny
-# @LastEditTime : 2021-04-15
+# @LastEditTime : 2021-05-12
 # @FilePath     : /LuWu/bin/luwu.py
 # @Desc         :
+import os
+
+os.environ["TF_KERAS"] = "1"
 import argparse
 import ast
 
@@ -28,12 +31,9 @@ without writing any code.
 arguments:
     cmd: 命令参数，用以指定 Luwu 将要执行的操作
 """
-# parser.add_argument(
-#     "run web-server",
-#     help="Run LuWu in the form of a web server.The default address is http://localhost:7788/ .",
-#     type=str,
-#     default="",
-# )
+parser.add_argument(
+    "--luwu_version", help="使用的Luwu版本，不指定则默认使用最新的正式版本", type=str, default=""
+)
 subparsers = parser.add_subparsers(title="cmd", description="命令参数，用以指定 Luwu 将要执行的操作")
 
 parse_web_server = subparsers.add_parser(
@@ -208,6 +208,104 @@ parse_classification.add_argument(
     default=False,
 )
 
+parse_text_classification = subparsers.add_parser(
+    "text_classification", help="通过命令行进行文本分类任务训练。"
+)
+parse_text_classification.set_defaults(cmd="text_classification")
+parse_text_classification.add_argument(
+    "--origin_dataset_path", help="处理前的数据集路径", type=str, default=""
+)
+parse_text_classification.add_argument(
+    "--validation_dataset_path",
+    help="验证数据集路径。如不指定，则从origin_dataset_path中进行切分。",
+    type=str,
+    default="",
+)
+parse_text_classification.add_argument(
+    "--test_dataset_path",
+    help="测试数据集路径。如不指定，则从origin_dataset_path中进行切分。",
+    type=str,
+    default="",
+)
+parse_text_classification.add_argument(
+    "--model_save_path", help="模型保存路径", type=str, default=""
+)
+parse_text_classification.add_argument(
+    "--validation_split", help="验证集切割比例。默认 0.1", type=float, default=0.1
+)
+parse_text_classification.add_argument(
+    "--test_split", help="测试集切割比例。默认 0.1", type=float, default=0.1
+)
+parse_text_classification.add_argument(
+    "--frezee_pre_trained_model",
+    help="在训练下游网络时，是否冻结预训练模型权重。默认 False",
+    type=ast.literal_eval,
+    default=False,
+)
+parse_text_classification.add_argument(
+    "--batch_size", help="mini batch 大小。默认 32.", type=int, default=8
+)
+parse_text_classification.add_argument(
+    "--epochs", help="训练epoch数。默认 30.", type=int, default=30
+)
+parse_text_classification.add_argument(
+    "--learning_rate", "-lr", help="学习率。默认 0.001.", type=float, default=0.001
+)
+parse_text_classification.add_argument(
+    "--optimizer",
+    help="训练时的优化器类型,可选参数为 [Adam, Adamax, Adagrad, Nadam, Adadelta, SGD, RMSprop]。默使用 Adam.",
+    type=str,
+    default="Adam",
+)
+parse_text_classification.add_argument(
+    "--optimize_with_piecewise_linear_lr",
+    help="是否使用分段的线性学习率进行优化。默认 False",
+    type=ast.literal_eval,
+    default=False,
+)
+parse_text_classification.add_argument(
+    "--project_id", help="项目编号. Defaults to 0.", type=int, default=0
+)
+parse_text_classification.add_argument(
+    "--maxlen", help="单行文本允许的最大长度。默认 128.", type=int, default=128
+)
+parse_text_classification.add_argument(
+    "--do_sample_balance",
+    help='是否对数据集做样本均衡，允许传递三个值，""表示不进行样本均衡，"over"表示上采样（过采样），"under"表示下采样（欠采样）。默认 ""',
+    type=str,
+    default="",
+)
+parse_text_classification.add_argument(
+    "--simplified_tokenizer",
+    help="是否对分词器的词表进行精简。默认 False",
+    type=ast.literal_eval,
+    default=False,
+)
+parse_text_classification.add_argument(
+    "--pre_trained_model_type",
+    help='使用何种预训练模型。默认 "bert_base"',
+    type=str,
+    default="bert_base",
+)
+parse_text_classification.add_argument(
+    "--language",
+    help='预训练语料的语言。默认 "bert_base"',
+    type=str,
+    default="chinese",
+)
+parse_text_classification.add_argument(
+    "--run_with_kaggle",
+    help="是否使用kaggle环境运行。必须先安装并配置kaggle api,才可以使用此选项。默认为False，即本地运行",
+    type=ast.literal_eval,
+    default=False,
+)
+parse_text_classification.add_argument(
+    "--kaggle_accelerator",
+    help="是否使用kaggle GPU进行加速（注意，仅当 run_with_kaggle 为 True 时此选项才有效）。默认不使用（即使用CPU）",
+    type=ast.literal_eval,
+    default=False,
+)
+
 
 args = parser.parse_args()
 print(args)
@@ -242,6 +340,17 @@ def run():
             KaggleUtil(classifier_class, **params).run()
         else:
             classifier_class(**params).run()
+    elif args.cmd == "text_classification":
+        from luwu.core.models.text_classifier.transformers import (
+            TransformerTextClassification,
+        )
+
+        if args.run_with_kaggle:
+            from luwu.core.models.kaggle.kaggle import KaggleUtil
+
+            KaggleUtil(TransformerTextClassification, **dict(args._get_kwargs())).run()
+        else:
+            TransformerTextClassification(**dict(args._get_kwargs())).run()
     else:
         print("请检查指令是否有误！")
 
