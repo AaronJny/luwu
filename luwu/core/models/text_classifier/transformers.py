@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # @Author       : AaronJny
-# @LastEditTime : 2021-05-11
+# @LastEditTime : 2021-05-13
 # @FilePath     : /LuWu/luwu/core/models/text_classifier/transformers.py
 # @Desc         :
 import os
@@ -21,6 +21,7 @@ from luwu.core.preprocess.data.data_generator import (
     TransformerTextClassificationDataGenerator,
 )
 from luwu.utils import file_util
+from jinja2 import Template
 
 
 class TransformerTextClassification(object):
@@ -71,7 +72,7 @@ class TransformerTextClassification(object):
         maxlen: int = 128,
         frezee_pre_trained_model=False,
         optimizer: str = "Adam",
-        optimize_with_piecewise_linear_lr: bool = True,
+        optimize_with_piecewise_linear_lr: bool = False,
         do_sample_balance: str = "",
         simplified_tokenizer: bool = False,
         pre_trained_model_type: str = "bert_base",
@@ -95,13 +96,14 @@ class TransformerTextClassification(object):
             maxlen (int, optional): 单个文本的最大长度. Defaults to 128.
             frezee_pre_trained_model (bool, optional): 在训练下游网络时，是否冻结预训练模型权重. Defaults to False.
             optimizer (str, optional): 优化器类别. Defaults to "Adam".
-            optimize_with_piecewise_linear_lr (bool): 是否使用分段的线性学习率进行优化. 默认 True
+            optimize_with_piecewise_linear_lr (bool): 是否使用分段的线性学习率进行优化. 默认 False
             do_sample_balance (str): 是否对数据集做样本均衡，允许传递三个值，""表示不进行样本均衡，
                                 "over"表示上采样（过采样），"under"表示下采样（欠采样）
             simplified_tokenizer (bool): 是否对分词器的词表进行精简，默认False
             pre_trained_model_type (str): 使用何种预训练模型
             language (str): 预训练语料的语言
         """
+        self._call_code = ""
         self.project_id = project_id
         self.frezee_pre_trained_model = frezee_pre_trained_model
         self.learning_rate = learning_rate
@@ -491,6 +493,32 @@ class TransformerTextClassification(object):
             self.model.evaluate(evaluate_dataset.for_fit(), steps=len(evaluate_dataset))
         )
 
+    def get_call_code(self):
+        """返回模型定义和模型调用的代码"""
+        if not self._call_code:
+            template_path = os.path.join(
+                os.path.dirname(__file__), "templates/TransformerTextClassifier.jinja"
+            )
+            with open(template_path, "r") as f:
+                text = f.read()
+            data = {
+                "dict_path": self.pre_trained_model_dict_path,
+                "model_path": self.model_save_path,
+                "id_label_dict": str(self.label_id_dict_rev),
+            }
+            template = Template(text)
+            code = template.render(**data)
+            self._call_code = code
+        return self._call_code
+
+    def save_code(self):
+        """导出模型定义和模型调用的代码"""
+        code = self.get_call_code()
+        code_file_name = "luwu-code.py"
+        code_path = os.path.join(self.project_save_path, code_file_name)
+        with open(code_path, "w") as f:
+            f.write(code)
+
     def run(self):
         # 预处理数据集
         logger.info("正在预处理数据集...")
@@ -502,6 +530,6 @@ class TransformerTextClassification(object):
         logger.info("开始训练...")
         self.train()
         # 导出代码
-        # logger.info("导出代码...")
-        # self.save_code()
+        logger.info("导出代码...")
+        self.save_code()
         logger.info("Done.")

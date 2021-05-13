@@ -1,6 +1,6 @@
 <!--
  * @Author       : AaronJny
- * @LastEditTime : 2021-04-30
+ * @LastEditTime : 2021-05-13
  * @FilePath     : /LuWu/README.MD
  * @Desc         : 
 -->
@@ -12,7 +12,7 @@
 
 <p>
   <img alt="Python Version" src="https://img.shields.io/badge/Python-3.7-blue"></img>
-  <img alt="Version" src="https://img.shields.io/badge/version-0.30-blue.svg?cacheSeconds=2592000" />
+  <img alt="Version" src="https://img.shields.io/badge/version-0.31-blue.svg?cacheSeconds=2592000" />
   <a href="https://github.com/AaronJny/luwu" target="_blank">
     <img alt="Documentation" src="https://img.shields.io/badge/documentation-yes-brightgreen.svg" />
   </a>
@@ -57,7 +57,7 @@
 - 任务类型
   - [x] 分类任务
     - [x] 图像分类
-    - [ ] 文本分类
+    - [x] 文本分类
     - [ ] 时间序列分类
   - [ ] 回归任务
     - [ ] 图像回归
@@ -90,10 +90,10 @@
     - [x] 图像分类 
       - [x] 按文件夹组织（每一个类别的图片放在一个单独文件夹下，这些文件夹又放在同一个文件夹下）
       - [ ] 以路径+类别的文本文件组织
-    - [ ] 文本分类
-      - [ ] [doccano](https://github.com/doccano/doccano)的导出格式
+    - [x] 文本分类
+      - [x] [doccano](https://github.com/doccano/doccano)的导出格式
         - [ ] csv
-        - [ ] jsonl
+        - [x] jsonl
     - [ ] 更多...
   - [x] 代码生成
     - [x] 生成简单的调用示例脚本
@@ -102,8 +102,8 @@
   - [x] 在线查看训练日志
   - [ ] 训练优化
     - [ ] EarlyStopping
-    - [ ] 迁移学习解冻特征抽取器做二次 Fine turn
-    - [ ] 自动样本均衡
+    - [x] 迁移学习解冻特征抽取器做二次 Fine turn
+    - [x] 自动样本均衡 (文本分类做了，图像分类还没做)
     - [ ] 增加简单的过拟合调节参数
   - [x] 命令行工具
     - [x] 图像分类任务的命令行支持
