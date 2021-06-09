@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # @Author       : AaronJny
-# @LastEditTime : 2021-05-13
+# @LastEditTime : 2021-06-09
 # @FilePath     : /LuWu/luwu/core/models/text_classifier/transformers.py
 # @Desc         :
 import os
@@ -16,6 +16,7 @@ import tensorflow as tf
 from bert4keras.models import build_transformer_model
 from bert4keras.tokenizers import Tokenizer, load_vocab
 from bert4keras.optimizers import extend_with_piecewise_linear_lr
+from bert4keras.layers import ConditionalRandomField
 from loguru import logger
 from luwu.core.preprocess.data.data_generator import (
     TransformerTextClassificationDataGenerator,
@@ -24,7 +25,7 @@ from luwu.utils import file_util
 from jinja2 import Template
 
 
-class TransformerTextClassification(object):
+class BaseTextTransformer(object):
 
     model_lang_weights_dict = {
         "bert_base": {
@@ -73,10 +74,10 @@ class TransformerTextClassification(object):
         frezee_pre_trained_model=False,
         optimizer: str = "Adam",
         optimize_with_piecewise_linear_lr: bool = False,
-        do_sample_balance: str = "",
         simplified_tokenizer: bool = False,
         pre_trained_model_type: str = "bert_base",
         language: str = "chinese",
+        *args,
         **kwargs,
     ):
         """
@@ -97,8 +98,6 @@ class TransformerTextClassification(object):
             frezee_pre_trained_model (bool, optional): 在训练下游网络时，是否冻结预训练模型权重. Defaults to False.
             optimizer (str, optional): 优化器类别. Defaults to "Adam".
             optimize_with_piecewise_linear_lr (bool): 是否使用分段的线性学习率进行优化. 默认 False
-            do_sample_balance (str): 是否对数据集做样本均衡，允许传递三个值，""表示不进行样本均衡，
-                                "over"表示上采样（过采样），"under"表示下采样（欠采样）
             simplified_tokenizer (bool): 是否对分词器的词表进行精简，默认False
             pre_trained_model_type (str): 使用何种预训练模型
             language (str): 预训练语料的语言
@@ -113,10 +112,6 @@ class TransformerTextClassification(object):
 
         origin_dataset_path = file_util.abspath(origin_dataset_path)
         model_save_path = file_util.abspath(model_save_path)
-
-        if do_sample_balance not in ("", "over", "under"):
-            raise Exception("参数 do_sample_balance 必须为 '','over','under' 之一！")
-        self.do_sample_balance = do_sample_balance
 
         self.simplified_tokenizer = simplified_tokenizer
         self.pre_trained_model_type = pre_trained_model_type
@@ -150,12 +145,7 @@ class TransformerTextClassification(object):
             self.test_dataset_path = test_dataset_path
 
         # 当未给定模型保存路径时，默认保存到origin数据集相同路径
-        if self.project_id:
-            self.project_save_name = (
-                f"luwu-text-classification-project-{self.project_id}"
-            )
-        else:
-            self.project_save_name = f"luwu-text-classification-project"
+        self.project_save_name = self.init_project_save_name(project_id)
         if model_save_path:
             self.project_save_path = os.path.join(
                 model_save_path, self.project_save_name
@@ -175,6 +165,13 @@ class TransformerTextClassification(object):
 
         self.model = None
 
+    @classmethod
+    def init_project_save_name(cls, project_id):
+        if project_id:
+            return f"luwu-text-transformer-project-{project_id}"
+        else:
+            return f"luwu-text-transformer-project"
+
     def get_optimizer_cls(self, optimizer_cls):
         optimizer_list = [
             "Adam",
@@ -193,6 +190,155 @@ class TransformerTextClassification(object):
         if self.optimize_with_piecewise_linear_lr:
             optimizer_cls = extend_with_piecewise_linear_lr(optimizer_cls)
         return optimizer_cls
+
+    def define_optimizer(self):
+        """
+        定义优化器
+        """
+        params = {"learning_rate": self.learning_rate}
+        if self.optimize_with_piecewise_linear_lr:
+            params["lr_schedule"] = {1000: 1, 2000: 0.1}
+        self.model.compile(
+            optimizer=self.optimizer_cls(**params),
+            loss=tf.keras.losses.categorical_crossentropy,
+            metrics=["accuracy"],
+        )
+
+    def build_model(self) -> tf.keras.Model:
+        """构建模型
+
+        Raises:
+            NotImplementedError: 待实现具体方法
+        """
+        self.model = self.define_model()
+        self.define_optimizer()
+        return self.model
+
+    def download_pre_trained_model(self):
+        pre_trained_models_config = self.model_lang_weights_dict[
+            self.pre_trained_model_type
+        ][self.language]
+        url = pre_trained_models_config["url"]
+        config_path = pre_trained_models_config["config_path"]
+        checkpoint_path = pre_trained_models_config["checkpoint_path"]
+        dict_path = pre_trained_models_config["dict_path"]
+
+        filename = url.split("/")[-1]
+        cache_subdir = file_util.abspath("~/.luwu/cache_models")
+        filepath = tf.keras.utils.get_file(
+            filename,
+            url,
+            cache_dir=".",
+            cache_subdir=cache_subdir,
+            extract=True,
+            archive_format="zip",
+        )
+        # os.remove(filepath)
+
+        cache_subdir = os.path.join(cache_subdir, filename.split(".")[0])
+        self.pre_trained_model_config_path = os.path.join(cache_subdir, config_path)
+        self.pre_trained_model_checkpoint_path = os.path.join(
+            cache_subdir, checkpoint_path
+        )
+        self.pre_trained_model_dict_path = os.path.join(cache_subdir, dict_path)
+
+    def create_tokenizer(self):
+        keep_tokens = []
+        if self.simplified_tokenizer:
+            token_dict, keep_tokens = load_vocab(
+                dict_path=self.pre_trained_model_dict_path,
+                simplified=True,
+                startswith=["[PAD]", "[UNK]", "[CLS]", "[SEP]"],
+            )
+            tokenizer = Tokenizer(token_dict, do_lower_case=True)
+        else:
+            tokenizer = Tokenizer(self.pre_trained_model_dict_path, do_lower_case=True)
+        return tokenizer, keep_tokens
+
+    def save_code(self):
+        """导出模型定义和模型调用的代码"""
+        code = self.get_call_code()
+        code_file_name = "luwu-code.py"
+        code_path = os.path.join(self.project_save_path, code_file_name)
+        with open(code_path, "w") as f:
+            f.write(code)
+
+    def preprocess_dataset(self):
+        """对数据集进行预处理"""
+        raise NotImplementedError
+
+    def define_model(self) -> tf.keras.Model:
+        """
+        定义模型
+        """
+        raise NotImplementedError
+
+    def train(self):
+        raise NotImplementedError
+
+    def get_call_code(self):
+        """返回模型定义和模型调用的代码"""
+        raise NotImplementedError
+
+    def run(self):
+        # 预处理数据集
+        logger.info("正在预处理数据集...")
+        self.preprocess_dataset()
+        # 构建模型
+        logger.info("正在构建模型...")
+        self.build_model()
+        # 训练模型
+        logger.info("开始训练...")
+        self.train()
+        # 导出代码
+        logger.info("导出代码...")
+        self.save_code()
+        logger.info("Done.")
+
+
+class TransformerTextClassification(BaseTextTransformer):
+    def __init__(
+        self,
+        do_sample_balance: str = "",
+        *args,
+        **kwargs,
+    ):
+        """
+        Args:
+            origin_dataset_path (str): 处理前的数据集路径
+            validation_dataset_path (str): 验证数据集路径。如不指定，
+                    则从origin_dataset_path中进行切分。
+            test_dataset_path (str): 测试数据集路径。如不指定，则从
+                                    origin_dataset_path中进行切分。
+            model_save_path (str): 模型保存路径
+            validation_split (float): 验证集切割比例
+            test_split (float): 测试集切割比例
+            batch_size (int): mini batch 大小
+            learning_rate (float): 学习率大小
+            epochs (int): 训练epoch数
+            project_id (int): 训练项目编号
+            maxlen (int, optional): 单个文本的最大长度. Defaults to 128.
+            frezee_pre_trained_model (bool, optional): 在训练下游网络时，是否冻结预训练模型权重. Defaults to False.
+            optimizer (str, optional): 优化器类别. Defaults to "Adam".
+            optimize_with_piecewise_linear_lr (bool): 是否使用分段的线性学习率进行优化. 默认 False
+            do_sample_balance (str): 是否对数据集做样本均衡，允许传递三个值，""表示不进行样本均衡，
+                                "over"表示上采样（过采样），"under"表示下采样（欠采样）
+            simplified_tokenizer (bool): 是否对分词器的词表进行精简，默认False
+            pre_trained_model_type (str): 使用何种预训练模型
+            language (str): 预训练语料的语言
+        """
+        super().__init__(*args, **kwargs)
+
+        if do_sample_balance not in ("", "over", "under"):
+            raise Exception("参数 do_sample_balance 必须为 '','over','under' 之一！")
+        self.do_sample_balance = do_sample_balance
+
+    @classmethod
+    def init_project_save_name(cls, project_id):
+        if project_id:
+            return f"luwu-text-classification-project-{project_id}"
+        else:
+            return f"luwu-text-classification-project"
 
     def define_model(self) -> tf.keras.Model:
         """
@@ -219,29 +365,6 @@ class TransformerTextClassification(object):
         model = tf.keras.models.Model(self.transformer.model.input, output)
         model.summary()
         return model
-
-    def define_optimizer(self):
-        """
-        定义优化器
-        """
-        params = {"learning_rate": self.learning_rate}
-        if self.optimize_with_piecewise_linear_lr:
-            params["lr_schedule"] = {1000: 1, 2000: 0.1}
-        self.model.compile(
-            optimizer=self.optimizer_cls(**params),
-            loss=tf.keras.losses.categorical_crossentropy,
-            metrics=["accuracy"],
-        )
-
-    def build_model(self) -> tf.keras.Model:
-        """构建模型
-
-        Raises:
-            NotImplementedError: 待实现具体方法
-        """
-        self.model = self.define_model()
-        self.define_optimizer()
-        return self.model
 
     def check_record(self, record):
         if not isinstance(record["text"], str):
@@ -362,47 +485,6 @@ class TransformerTextClassification(object):
             train_data = balance_samples
         return train_data
 
-    def download_pre_trained_model(self):
-        pre_trained_models_config = self.model_lang_weights_dict[
-            self.pre_trained_model_type
-        ][self.language]
-        url = pre_trained_models_config["url"]
-        config_path = pre_trained_models_config["config_path"]
-        checkpoint_path = pre_trained_models_config["checkpoint_path"]
-        dict_path = pre_trained_models_config["dict_path"]
-
-        filename = url.split("/")[-1]
-        cache_subdir = file_util.abspath("~/.luwu/cache_models")
-        filepath = tf.keras.utils.get_file(
-            filename,
-            url,
-            cache_dir=".",
-            cache_subdir=cache_subdir,
-            extract=True,
-            archive_format="zip",
-        )
-        # os.remove(filepath)
-
-        cache_subdir = os.path.join(cache_subdir, filename.split(".")[0])
-        self.pre_trained_model_config_path = os.path.join(cache_subdir, config_path)
-        self.pre_trained_model_checkpoint_path = os.path.join(
-            cache_subdir, checkpoint_path
-        )
-        self.pre_trained_model_dict_path = os.path.join(cache_subdir, dict_path)
-
-    def create_tokenizer(self):
-        keep_tokens = []
-        if self.simplified_tokenizer:
-            token_dict, keep_tokens = load_vocab(
-                dict_path=self.pre_trained_model_dict_path,
-                simplified=True,
-                startswith=["[PAD]", "[UNK]", "[CLS]", "[SEP]"],
-            )
-            tokenizer = Tokenizer(token_dict, do_lower_case=True)
-        else:
-            tokenizer = Tokenizer(self.pre_trained_model_dict_path, do_lower_case=True)
-        return tokenizer, keep_tokens
-
     def preprocess_dataset(self):
         """对数据集进行预处理"""
 
@@ -511,25 +593,48 @@ class TransformerTextClassification(object):
             self._call_code = code
         return self._call_code
 
-    def save_code(self):
-        """导出模型定义和模型调用的代码"""
-        code = self.get_call_code()
-        code_file_name = "luwu-code.py"
-        code_path = os.path.join(self.project_save_path, code_file_name)
-        with open(code_path, "w") as f:
-            f.write(code)
 
-    def run(self):
-        # 预处理数据集
-        logger.info("正在预处理数据集...")
-        self.preprocess_dataset()
-        # 构建模型
-        logger.info("正在构建模型...")
-        self.build_model()
-        # 训练模型
-        logger.info("开始训练...")
-        self.train()
-        # 导出代码
-        logger.info("导出代码...")
-        self.save_code()
-        logger.info("Done.")
+class TransformerTextSequenceLabeling(BaseTextTransformer):
+    def __init__(
+        self,
+        bert_layers=12,
+        learning_rate=2e-6,
+        crf_lr_multiplier=1000,
+        *args,
+        **kwargs,
+    ):
+        super().__init__(*args, **kwargs)
+        self.bert_layers = bert_layers
+        self.crf_lr_multiplier = crf_lr_multiplier
+
+    def define_model(self) -> tf.keras.Model:
+        model_name = self.bert4keras_model_name_dict[self.pre_trained_model_type]
+        params = {
+            "config_path": self.pre_trained_model_config_path,
+            "checkpoint_path": self.pre_trained_model_checkpoint_path,
+            "model": model_name,
+        }
+        if self.simplified_tokenizer:
+            params["keep_tokens"] = self.keep_tokens
+        self.transformer = build_transformer_model(**params)
+        output_layer = "Transformer-%s-FeedForward-Norm" % (self.bert_layers - 1)
+        output = self.transformer.get_layer(output_layer).output
+        categories = []
+        output = tf.keras.layers.Dense(len(categories) * 2 + 1)(output)
+        self.CRF = ConditionalRandomField(lr_multiplier=self.crf_lr_multiplier)
+        output = self.CRF(output)
+        model = tf.keras.models.Model(self.transformer.input, output)
+        return model
+
+    def define_optimizer(self):
+        """
+        定义优化器
+        """
+        params = {"learning_rate": self.learning_rate}
+        if self.optimize_with_piecewise_linear_lr:
+            params["lr_schedule"] = {1000: 1, 2000: 0.1}
+        self.model.compile(
+            optimizer=self.optimizer_cls(**params),
+            loss=self.CRF.sparse_loss,
+            metrics=[self.CRF.sparse_accuracy],
+        )
