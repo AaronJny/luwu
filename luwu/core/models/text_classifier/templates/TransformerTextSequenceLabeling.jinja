@@ -1,0 +1,43 @@
+# -*- coding: utf-8 -*-
+"""
+此文件由 LuWu 自动生成
+"""
+import os
+
+os.environ["TF_KERAS"] = "1"
+import tensorflow as tf
+import tensorflow.keras.backend as K
+from bert4keras.tokenizers import Tokenizer
+from luwu.core.models.text_classifier.transformers import (
+    NamedEntityRecognizer,
+    TransformerTextSequenceLabeling,
+)
+
+# 词汇表地址
+dict_path = "{{dict_path}}"
+# 训练好的模型保存路径
+model_path = "{{model_path}}"
+# 要预测的文本
+sentence = "请替换成要进行预测的文本"
+# 编号->标签的映射
+categories = {{categories}}
+
+# 建立分词器
+tokenizer = Tokenizer(dict_path, do_lower_case=True)
+# 加载模型
+model = tf.keras.models.load_model(model_path, compile=False)
+
+NER = NamedEntityRecognizer(
+    tokenizer,
+    model,
+    categories,
+    trans=K.eval(
+        model.get_layer("CRF").trans,
+    ),
+    starts=[0],
+    ends=[0],
+)
+data = NER.recognize(sentence)
+for start, end, label in data:
+    print(sentence[start : end + 1], label)
+print(data)

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # @Author       : AaronJny
-# @LastEditTime : 2021-06-09
+# @LastEditTime : 2021-06-13
 # @FilePath     : /LuWu/luwu/core/models/text_classifier/transformers.py
 # @Desc         :
 import os
@@ -13,16 +13,20 @@ from glob import glob
 
 import numpy as np
 import tensorflow as tf
-from bert4keras.models import build_transformer_model
-from bert4keras.tokenizers import Tokenizer, load_vocab
-from bert4keras.optimizers import extend_with_piecewise_linear_lr
+import tensorflow.keras.backend as K
 from bert4keras.layers import ConditionalRandomField
+from bert4keras.models import build_transformer_model
+from bert4keras.optimizers import extend_with_piecewise_linear_lr
+from bert4keras.snippets import ViterbiDecoder, to_array
+from bert4keras.tokenizers import Tokenizer, load_vocab
+from jinja2 import Template
 from loguru import logger
 from luwu.core.preprocess.data.data_generator import (
     TransformerTextClassificationDataGenerator,
+    TransformerTextSequenceLabelingDataGenerator,
 )
 from luwu.utils import file_util
-from jinja2 import Template
+from tqdm import tqdm
 
 
 class BaseTextTransformer(object):
@@ -440,6 +444,7 @@ class TransformerTextClassification(BaseTextTransformer):
             for _ in range(dev_nums):
                 index = random.randint(0, total - 1)
                 dev_data.append(data[index].copy())
+                exclude_indexs.add(index)
         # 判断有没有指定测试集
         if self.test_dataset_path:
             # 如果制定了，就从指定路径读取
@@ -452,6 +457,7 @@ class TransformerTextClassification(BaseTextTransformer):
             for _ in range(test_nums):
                 index = random.randint(0, total - 1)
                 test_data.append(data[index].copy())
+                exclude_indexs.add(index)
         train_data = [
             data[index].copy() for index in range(total) if index not in exclude_indexs
         ]
@@ -603,6 +609,7 @@ class TransformerTextSequenceLabeling(BaseTextTransformer):
         *args,
         **kwargs,
     ):
+        kwargs["learning_rate"] = learning_rate
         super().__init__(*args, **kwargs)
         self.bert_layers = bert_layers
         self.crf_lr_multiplier = crf_lr_multiplier
@@ -619,11 +626,20 @@ class TransformerTextSequenceLabeling(BaseTextTransformer):
         self.transformer = build_transformer_model(**params)
         output_layer = "Transformer-%s-FeedForward-Norm" % (self.bert_layers - 1)
         output = self.transformer.get_layer(output_layer).output
-        categories = []
-        output = tf.keras.layers.Dense(len(categories) * 2 + 1)(output)
-        self.CRF = ConditionalRandomField(lr_multiplier=self.crf_lr_multiplier)
+        output = tf.keras.layers.Dense(len(self.categories) * 2 + 1)(output)
+        self.CRF = ConditionalRandomField(
+            lr_multiplier=self.crf_lr_multiplier, name="CRF"
+        )
         output = self.CRF(output)
         model = tf.keras.models.Model(self.transformer.input, output)
+        self.NER = NamedEntityRecognizer(
+            self.tokenizer,
+            model,
+            self.categories,
+            trans=K.eval(self.CRF.trans),
+            starts=[0],
+            ends=[0],
+        )
         return model
 
     def define_optimizer(self):
@@ -638,3 +654,228 @@ class TransformerTextSequenceLabeling(BaseTextTransformer):
             loss=self.CRF.sparse_loss,
             metrics=[self.CRF.sparse_accuracy],
         )
+
+    def load_data(self, filepath):
+        data = []
+        categories = set()
+        with open(filepath, "r") as f:
+            lines = f.readlines()
+        for line in lines:
+            if not line:
+                continue
+            record = json.loads(line)
+            tmp = [record["text"]]
+            for item in record["annotations"]:
+                tmp.append(
+                    [item["start_offset"], item["end_offset"] - 1, item["label"]]
+                )
+                categories.add(item["label"])
+            data.append(tmp)
+        return data, categories
+
+    def load_and_split_dataset(self):
+        # 读取原始数据
+        data, categories = self.load_data(self.origin_dataset_path)
+        # 切分数据集
+        total = len(data)
+        exclude_indexs = set()
+        # 判断有没有指定验证集
+        if self.validation_dataset_path:
+            # 如果指定了，就从指定路径读取
+            dev_data, tmp_categories = self.load_data(self.validation_dataset_path)
+            categories = categories.union(tmp_categories)
+        else:
+            dev_nums = int(total * self.validation_split)
+            dev_data = []
+            for _ in range(dev_nums):
+                index = random.randint(0, total - 1)
+                dev_data.append(data[index].copy())
+                exclude_indexs.add(index)
+        # 判断有没有指定测试集
+        if self.test_dataset_path:
+            # 如果指定了，就从指定路径读取
+            test_data, tmp_categories = self.load_data(self.test_dataset_path)
+            categories = categories.union(tmp_categories)
+        else:
+            test_nums = int(total * self.test_split)
+            test_data = []
+            for _ in range(test_nums):
+                index = random.randint(0, total - 1)
+                test_data.append(data[index].copy())
+                exclude_indexs.add(index)
+        train_data = [
+            data[index].copy() for index in range(total) if index not in exclude_indexs
+        ]
+        categories = list(sorted(categories))
+        self.categories = categories
+        return train_data, dev_data, test_data, categories
+
+    def preprocess_dataset(self):
+        """对数据集进行预处理"""
+
+        # 数据集读取和简单处理
+        logger.info("读取数据集...")
+        train_data, dev_data, test_data, categories = self.load_and_split_dataset()
+        # 混洗数据
+        np.random.shuffle(train_data)
+        # 下载预训练模型
+        logger.info("开始下载预训练模型...")
+        self.download_pre_trained_model()
+        # 创建tokenizer
+        self.tokenizer, self.keep_tokens = self.create_tokenizer()
+
+        logger.info("创建数据生成器...")
+        # 创建数据生成器
+        if train_data:
+            self.train_dataset = TransformerTextSequenceLabelingDataGenerator(
+                data=train_data,
+                batch_size=self.batch_size,
+                tokenizer=self.tokenizer,
+                maxlen=self.maxlen,
+                categories=categories,
+            )
+        else:
+            raise Exception("训练集为空！请确认！")
+        if dev_data:
+            self.dev_dataset = TransformerTextSequenceLabelingDataGenerator(
+                data=dev_data,
+                batch_size=self.batch_size,
+                tokenizer=self.tokenizer,
+                maxlen=self.maxlen,
+                categories=categories,
+            )
+        else:
+            self.dev_dataseet = None
+        if test_data:
+            self.test_dataset = TransformerTextSequenceLabelingDataGenerator(
+                data=test_data,
+                batch_size=self.batch_size,
+                tokenizer=self.tokenizer,
+                maxlen=self.maxlen,
+                categories=categories,
+            )
+        else:
+            self.test_dataset = None
+        logger.info(
+            f"数据集分配：train {len(train_data)}, dev {len(dev_data)}, test {len(test_data)}"
+        )
+
+    def train(self):
+        evaluator = TextSequenceLabelingEvaluator(self)
+        params = {
+            "epochs": self.epochs,
+            "steps_per_epoch": len(self.train_dataset),
+            "callbacks": [evaluator],
+        }
+
+        # 判断是否需要冻结模型
+        if self.frezee_pre_trained_model:
+            self.transformer.trainable = False
+
+        self.model.fit(self.train_dataset.for_fit(), **params)
+
+        if self.test_dataset:
+            logger.info("在测试集上进行验证...")
+            evaluate_dataset = self.test_dataset
+        elif self.dev_dataset:
+            logger.info("在验证集上进行验证...")
+            evaluate_dataset = self.dev_dataset
+        else:
+            logger.info("在训练集上进行验证...")
+            evaluate_dataset = self.train_dataset
+        self.model.load_weights(self.model_save_path)
+        logger.info(
+            self.model.evaluate(evaluate_dataset.for_fit(), steps=len(evaluate_dataset))
+        )
+
+    def get_call_code(self):
+        """返回模型定义和模型调用的代码"""
+        if not self._call_code:
+            template_path = os.path.join(
+                os.path.dirname(__file__),
+                "templates/TransformerTextSequenceLabeling.jinja",
+            )
+            with open(template_path, "r") as f:
+                text = f.read()
+            data = {
+                "dict_path": self.pre_trained_model_dict_path,
+                "model_path": self.model_save_path,
+                "categories": str(self.categories),
+            }
+            template = Template(text)
+            code = template.render(**data)
+            self._call_code = code
+        return self._call_code
+
+
+class NamedEntityRecognizer(ViterbiDecoder):
+    """命名实体识别器"""
+
+    def __init__(self, tokenizer, model, categories, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.tokenizer = tokenizer
+        self.model = model
+        self.categories = categories
+
+    def recognize(self, text):
+        tokens = self.tokenizer.tokenize(text, maxlen=512)
+        mapping = self.tokenizer.rematch(text, tokens)
+        token_ids = self.tokenizer.tokens_to_ids(tokens)
+        segment_ids = [0] * len(token_ids)
+        token_ids, segment_ids = to_array([token_ids], [segment_ids])
+        nodes = self.model.predict([token_ids, segment_ids])[0]
+        labels = self.decode(nodes)
+        entities, starting = [], False
+        for i, label in enumerate(labels):
+            if label > 0:
+                if label % 2 == 1:
+                    starting = True
+                    entities.append([[i], self.categories[(label - 1) // 2]])
+                elif starting:
+                    entities[-1][0].append(i)
+                else:
+                    starting = False
+            else:
+                starting = False
+        return [(mapping[w[0]][0], mapping[w[-1]][-1], l) for w, l in entities]
+
+
+class TextSequenceLabelingEvaluator(tf.keras.callbacks.Callback):
+    def __init__(self, luwu_model):
+        self.best_val_f1 = 0
+        self.luwu_model = luwu_model
+        self.CRF = self.luwu_model.CRF
+        self.NER = self.luwu_model.NER
+        self.valid_data = self.luwu_model.dev_dataset
+        self.test_data = self.luwu_model.test_dataset
+
+    def evaluate(self, data):
+        """评测函数"""
+        X, Y, Z = 1e-10, 1e-10, 1e-10
+        for d in tqdm(data.data, ncols=data.steps):
+            R = set(self.NER.recognize(d[0]))
+            T = set([tuple(i) for i in d[1:]])
+            X += len(R & T)
+            Y += len(R)
+            Z += len(T)
+        f1, precision, recall = 2 * X / (Y + Z), X / Y, X / Z
+        return f1, precision, recall
+
+    def on_epoch_end(self, epoch, logs=None):
+        trans = K.eval(self.CRF.trans)
+        self.NER.trans = trans
+        f1, precision, recall = self.evaluate(self.valid_data)
+        # 保存最优
+        if f1 >= self.best_val_f1:
+            self.best_val_f1 = f1
+            self.luwu_model.model.save(self.luwu_model.model_save_path)
+        print(
+            "valid:  f1: %.5f, precision: %.5f, recall: %.5f, best f1: %.5f\n"
+            % (f1, precision, recall, self.best_val_f1)
+        )
+        if epoch == self.luwu_model.epochs:
+            f1, precision, recall = self.evaluate(self.test_data)
+            print(
+                "test:  f1: %.5f, precision: %.5f, recall: %.5f\n"
+                % (f1, precision, recall)
+            )

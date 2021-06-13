@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # @Date         : 2021-01-20
 # @Author       : AaronJny
-# @LastEditTime : 2021-05-11
+# @LastEditTime : 2021-06-13
 # @FilePath     : /LuWu/luwu/core/preprocess/data/data_generator.py
 # @Desc         :
 import math
@@ -230,7 +230,7 @@ class DataGenerator(object):
         """
         if names is None:
 
-            generator = self.forfit
+            generator = self.for_fit
 
         else:
 
@@ -242,7 +242,7 @@ class DataGenerator(object):
                 warps = lambda k, v: tuple(dict(zip(i, j)) for i, j in zip(k, v))
 
             def generator():
-                for d in self.forfit():
+                for d in self.for_fit():
                     yield warps(names, d)
 
             types = warps(names, types)
@@ -285,4 +285,38 @@ class TransformerTextClassificationDataGenerator(DataGenerator):
                     "Input-Token": batch_token_ids,
                     "Input-Segment": batch_segment_ids,
                 }, batch_labels
+                batch_token_ids, batch_segment_ids, batch_labels = [], [], []
+
+
+class TransformerTextSequenceLabelingDataGenerator(DataGenerator):
+    def __init__(self, categories, *args, tokenizer=None, maxlen=128, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.tokenizer = tokenizer
+        self.maxlen = maxlen
+        self.categories = categories
+
+    def __iter__(self, random=False):
+        batch_token_ids, batch_segment_ids, batch_labels = [], [], []
+        for is_end, d in self.sample(random):
+            tokens = self.tokenizer.tokenize(d[0], maxlen=self.maxlen)
+            mapping = self.tokenizer.rematch(d[0], tokens)
+            start_mapping = {j[0]: i for i, j in enumerate(mapping) if j}
+            end_mapping = {j[-1]: i for i, j in enumerate(mapping) if j}
+            token_ids = self.tokenizer.tokens_to_ids(tokens)
+            segment_ids = [0] * len(token_ids)
+            labels = np.zeros(len(token_ids))
+            for start, end, label in d[1:]:
+                if start in start_mapping and end in end_mapping:
+                    start = start_mapping[start]
+                    end = end_mapping[end]
+                    labels[start] = self.categories.index(label) * 2 + 1
+                    labels[start + 1 : end + 1] = self.categories.index(label) * 2 + 2
+            batch_token_ids.append(token_ids)
+            batch_segment_ids.append(segment_ids)
+            batch_labels.append(labels)
+            if len(batch_token_ids) == self.batch_size or is_end:
+                batch_token_ids = sequence_padding(batch_token_ids)
+                batch_segment_ids = sequence_padding(batch_segment_ids)
+                batch_labels = sequence_padding(batch_labels)
+                yield [batch_token_ids, batch_segment_ids], batch_labels
                 batch_token_ids, batch_segment_ids, batch_labels = [], [], []
