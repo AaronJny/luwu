@@ -1,6 +1,6 @@
 <!--
  * @Author       : AaronJny
- * @LastEditTime : 2021-05-13
+ * @LastEditTime : 2021-06-13
  * @FilePath     : /LuWu/README.MD
  * @Desc         : 
 -->
@@ -12,7 +12,7 @@
 
 <p>
   <img alt="Python Version" src="https://img.shields.io/badge/Python-3.7-blue"></img>
-  <img alt="Version" src="https://img.shields.io/badge/version-0.31-blue.svg?cacheSeconds=2592000" />
+  <img alt="Version" src="https://img.shields.io/badge/version-0.32-blue.svg?cacheSeconds=2592000" />
   <a href="https://github.com/AaronJny/luwu" target="_blank">
     <img alt="Documentation" src="https://img.shields.io/badge/documentation-yes-brightgreen.svg" />
   </a>
@@ -70,7 +70,7 @@
       - [ ] 语义分割
       - [ ] 实体分割
     - [ ] 文本类
-      - [ ] 命名实体识别
+      - [x] 命名实体识别
       - [ ] 关系抽取
       - [ ] 文本生成
     - [ ] 时间序列
